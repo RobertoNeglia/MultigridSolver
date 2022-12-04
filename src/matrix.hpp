@@ -6,4 +6,6 @@ private:
 public:
   void
   insertElement(double val, int i, int j);
+  void
+  print();
 };
