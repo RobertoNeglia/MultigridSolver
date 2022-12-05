@@ -72,6 +72,11 @@ private:
           }
       }
 
+      for (int i = 0; i < A.rows(); i++) {
+        std::cout << number_of_influences.at(i);
+      }
+    std::cout << std::endl;
+
       for (auto [i, lambda_i] : number_of_influences) {
         std::cout << "Number of points influenced by " << i << ": " << lambda_i
                   << std::endl;
