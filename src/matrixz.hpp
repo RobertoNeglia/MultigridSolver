@@ -30,42 +30,71 @@ public:
   void
   insertElement(double val, int i, int j) {
       if (val != 0) {
-        A.emplace_back(val);
-        A_col.emplace_back(j);
-          if (A_row[i] == -1) {
-            bool found = false;
-              for (unsigned int k = i + 1; k < nRow; k++) {
-                  if (!found) {
-                      if (A_row[k] != -1) {
-                        A_row[i] = A_row[k];
-                        found    = true;
-                    } else if (A_row[k] != -1)
-                      A_row[k]++;
-                }
-              }
-              if (!found) {
-                A_row[i] = A_row[A_row.size() - 1];
-            }
-        }
+          if (A.size() == 0) {
+            A.emplace_back(val);
+            A_col.emplace_back(j);
+            A_row[i] = 0;
+            A_row[A_row.size() - 1]++;
 
-          for (unsigned int k = i + 1; k < nRow + 1; k++) {
-            if (A_row[k] != -1)
-              A_row[k]++;
+          } else {
+              if (A_row[i] == -1) {
+                bool found = false;
+                  for (unsigned int k = i + 1; k < nRow; k++) {
+                      if (!found) {
+                          if (A_row[k] != -1) {
+                            A_row[i] = A_row[k];
+                            found    = true;
+                        }
+
+                      } else {
+                        if (A_row[k] != -1)
+                          A_row[k]++;
+                      }
+                  }
+                  if (!found) {
+                    A_row[i] = A_row[A_row.size() - 1];
+                }
+            }
+
+              for (unsigned int k = i + 1; k < nRow + 1; k++) {
+                if (A_row[k] != -1)
+                  A_row[k]++;
+              }
+
+              if (getElement(i, j) != 0) {
+                getElementRef(i, j) = val;
+              } else {
+                bool found = false;
+                int  diff;
+                  for (int k = i + 1; k < nRow + 1 && !found; k++) {
+                       if (A_row[k] != -1) {
+                         diff  = A_row[k] - A_row[i];
+                         found = true;
+                    }
+                  }
+                  if (diff == 1) {
+                     A_col.insert(A_col.begin() + A_row[i], j);
+                     A.insert(A.begin() + A_row[i], val);
+
+                  } else {
+                     bool found = false;
+                      for (int k = 0; k < diff && !found; k++) {
+                           if ((A_col[A_row[i] + k]) > j) {
+                             A_col.insert(A_col.begin() + A_row[i] + k, j);
+                             A.insert(A.begin() + A_row[i] + k, val);
+                             found = true;
+                        }
+                      }
+                     if (!found)
+                      std::cout << "PIPPO" << endl;
+                  }
+              }
           }
-      } else {
-          for (unsigned int k = i + 1; k < nRow + 1; k++) {
-            if (A_row[k] != -1)
-              A_row[k]++;
-          }
-      }
+    }
   }
 
-  double
-  getElement(int i, int j) {
-    if (A.size() == 0)
-      return 0;
-    if (A_row[i] == -1)
-      return 0;
+  double &
+  getElementRef(int i, int j) {
     bool found = false;
     int  diff;
       for (int k = i + 1; k < nRow + 1 && !found; k++) {
@@ -76,17 +105,46 @@ public:
       }
       if (diff == 1) {
          if (A_col[A_row[i]] == j)
-          return A[A_row[i]];
-        else
-          return 0;
+          return (A[A_row[i]]);
       } else {
            for (int k = 0; k < diff; k++) {
                if ((A_col[A_row[i] + k]) == j) {
                  return A[A_row[i] + k];
             }
           }
-        return 0;
       }
+  }
+
+  double
+  getElement(int i, int j) {
+      if (i < nRow && j < nCol) {
+        if (A.size() == 0)
+          return 0;
+        if (A_row[i] == -1)
+          return 0;
+        bool found = false;
+        int  diff;
+          for (int k = i + 1; k < nRow + 1 && !found; k++) {
+               if (A_row[k] != -1) {
+                 diff  = A_row[k] - A_row[i];
+                 found = true;
+            }
+          }
+          if (diff == 1) {
+             if (A_col[A_row[i]] == j)
+              return A[A_row[i]];
+            else
+              return 0;
+          } else {
+               for (int k = 0; k < diff; k++) {
+                   if ((A_col[A_row[i] + k]) == j) {
+                     return A[A_row[i] + k];
+                }
+              }
+            return 0;
+          }
+    }
+    return -1;
   }
 
   // commento
