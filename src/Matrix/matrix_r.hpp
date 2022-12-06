@@ -30,11 +30,11 @@ private:
    * Returns the reference to the element, if present
    */
   std::pair<double *, bool>
-  get_coeff_ref(const int i, const int j) {
-    int start_row = A_row[i];       // beginning of the row i in the vectors A and A_col
-    int end_row   = get_end_row(i); // end of the row i in the vectors A and A_col
+  coeff_ref(const int i, const int j) {
+    int start = A_row[i];   // beginning of the row i in the vectors A and A_col
+    int end   = end_row(i); // end of the row i in the vectors A and A_col
 
-      for (int k = start_row; k < end_row; k++) {
+      for (int k = start; k < end; k++) {
         if (A_col[k] == j) // if the element is present, return it
           return std::make_pair(&A[k], true);
       }
@@ -45,7 +45,7 @@ private:
    * Returns the end of row i of the matrix inside the vectors A and A_col
    */
   int
-  get_end_row(const int i) {
+  end_row(const int i) {
       for (int k = i + 1; k < n_rows + 1; k++) {
         if (A_row[k] != -1)
           return A_row[k];
@@ -83,12 +83,12 @@ private:
    */
   int
   find_position(const int i, const int j) {
-    const int start_row = A_row[i];
-    const int end_row   = get_end_row(i);
+    const int start = A_row[i];
+    const int end   = end_row(i);
 
     int k;
     int col;
-      for (k = start_row; k < end_row; k++) {
+      for (k = start; k < end; k++) {
         col = A_col[k];
         if (j < col)
           return k;
@@ -101,20 +101,20 @@ private:
    */
   void
   insert_in_empty_row(const double val, const int i, const int j) {
-    int end_row = get_end_row(i);
+    int end = end_row(i);
 
     // A and A_col vectors update
       if (A.size() == 0) { // structures are empty
         A.emplace_back(val);
         A_col.emplace_back(j);
       } else {
-        A.insert(A.begin() + end_row, val);
-        A_col.insert(A_col.begin() + end_row, j);
+        A.insert(A.begin() + end, val);
+        A_col.insert(A_col.begin() + end, j);
       }
     // end of A and A_col vectors update
 
     // A_row vector update
-    A_row[i] = end_row;
+    A_row[i] = end;
     update_next_A_row(i, INCREASE);
     update_nnz(INCREASE);
     // end of A_row vector update
@@ -125,7 +125,7 @@ private:
    */
   void
   insert_in_non_empty_row(const double val, const int i, const int j) {
-    std::pair<double, bool> el = get_coeff(i, j);
+    std::pair<double, bool> el = coeff(i, j);
       if (el.second && el.first == 0) { // if element is not already present in the matrix
 
         // A and A_col vectors update
@@ -141,9 +141,9 @@ private:
 
       } else if (el.second && el.first != 0) {
         // if element is present in the matrix, simply override it
-        std::pair<double *, bool> coeff_ref = get_coeff_ref(i, j);
-        if (coeff_ref.second)
-          *(get_coeff_ref(i, j).first) = val;
+        std::pair<double *, bool> cf = coeff_ref(i, j);
+        if (cf.second)
+          *(cf.first) = val;
     }
   }
 
@@ -152,11 +152,11 @@ private:
    */
   void
   remove(const int i, const int j) {
-    std::pair<double, bool> el = get_coeff(i, j);
+    std::pair<double, bool> el = coeff(i, j);
       // check that the element is present in the matrix
       if (el.second && el.first != 0) { // element is in the matrix
-        const int start_row = A_row[i];
-        const int end_row   = get_end_row(i);
+        const int start = A_row[i];
+        const int end   = end_row(i);
 
         // A and A_col vectors update
         int k = find_position(i, j) - 1;
@@ -166,7 +166,7 @@ private:
         // end of A and A_col vectors update
 
         // A_row vector update
-        const int diff = end_row - start_row;
+        const int diff = end - start;
         if (diff == 1)
           A_row[i] = -1;
         update_next_A_row(i, DECREASE);
@@ -191,17 +191,17 @@ public:
   }
 
   int
-  get_n_rows() {
+  rows() {
     return n_rows;
   }
 
   int
-  get_n_cols() {
+  cols() {
     return n_cols;
   }
 
   int
-  get_nnz() {
+  nnz() {
     return nnz;
   }
 
@@ -209,17 +209,17 @@ public:
    * Returns the coefficient in position (i,j) of the matrix
    */
   std::pair<double, bool> const
-  get_coeff(const int i, const int j) {
+  coeff(const int i, const int j) {
     if (i >= n_rows || j >= n_cols) // out of bound requests, return false
       return std::make_pair(0, false);
 
-    int start_row = A_row[i];
-    if (start_row == -1) // empty row, returns 0
+    int start = A_row[i];
+    if (start == -1) // empty row, returns 0
       return std::make_pair(0, true);
 
     // not empty row
-    int end_row = get_end_row(i); // get end of the row
-      for (int k = start_row; k < end_row; k++) {
+    int end = end_row(i); // get end of the row
+      for (int k = start; k < end; k++) {
         if (A_col[k] == j) // if element is found, return it
           return std::make_pair(A[k], true);
       }
@@ -253,7 +253,7 @@ public:
     std::cout << "Number of nnz elements: " << nnz << std::endl;
       for (int i = 0; i < n_rows; i++) {
           for (int j = 0; j < n_cols; j++) {
-            std::cout << get_coeff(i, j).first << "\t";
+            std::cout << coeff(i, j).first << "\t";
           }
         std::cout << std::endl;
       }
