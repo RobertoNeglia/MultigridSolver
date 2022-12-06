@@ -14,24 +14,51 @@
             - parallelizzare coarsening
 */
 
+void
+generate_discretized_matrix(Eigen::SparseMatrix<double> &A, int m, int n) {
+  int mn = m * n;
+    for (int i = 0; i < mn; i++) {
+      A.coeffRef(i, i) = 4;
+      if (i > 0 && i % m != 0)
+        A.coeffRef(i, i - 1) = -1;
+      if (i > m - 1)
+        A.coeffRef(i, i - m) = -1;
+      if (i < mn - 1 && (i % m) != (m - 1))
+        A.coeffRef(i, i + 1) = -1;
+      if (i < mn - m)
+        A.coeffRef(i, i + m) = -1;
+    }
+}
+
 int
 main() {
   int m = 3;
   int n = 3;
-
-  Domain omega;
 
   Matrix M(m, n);
   M.print_matrix();
   M.print_structure();
   std::cout << std::endl;
 
-  M.insert_coeff(1, 0, 0);
+  M.insert_coeff(9, 2, 2);
+  M.insert_coeff(9, 0, 0);
+  M.insert_coeff(9, 1, 1);
+
+  M.print_matrix();
+  M.print_structure();
+  std::cout << "9 * I" << std::endl << std::endl;
+
+  M.insert_coeff(9, 0, 1);
   M.print_matrix();
   M.print_structure();
   std::cout << std::endl;
 
-  M.insert_coeff(1, 1, 1);
+  M.insert_coeff(1, 0, 1);
+  M.print_matrix();
+  M.print_structure();
+  std::cout << std::endl;
+
+  M.insert_coeff(0, 0, 1);
   M.print_matrix();
   M.print_structure();
   std::cout << std::endl;
@@ -47,22 +74,12 @@ main() {
   //     }
   //   std::cout << std::endl;
   // }
-  // SparseMatrix A(mn, mn);
+  //   int                         mn = m * n;
+  //   Eigen::SparseMatrix<double> A(mn, mn);
+  //   generate_discretized_matrix(A, m, n);
 
-  //   for (int i = 0; i < mn; i++) {
-  //     A.coeffRef(i, i) = 4;
-  //     if (i > 0 && i % m != 0)
-  //       A.coeffRef(i, i - 1) = -1;
-  //     if (i > m - 1)
-  //       A.coeffRef(i, i - m) = -1;
-  //     if (i < mn - 1 && (i % m) != (m - 1))
-  //       A.coeffRef(i, i + 1) = -1;
-  //     if (i < mn - m)
-  //       A.coeffRef(i, i + m) = -1;
-  //   }
+  //   std::cout << A << std::endl;
 
-  // std::cout << A << std::endl;
-
-  // AlgebraicMultigrid amg(A);
+  //   AlgebraicMultigrid amg(A);
   return 0;
 }
