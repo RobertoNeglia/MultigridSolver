@@ -40,53 +40,31 @@ main() {
   M.print_structure();
   std::cout << std::endl;
 
-  M.insert_coeff(9, 2, 2);
-  M.insert_coeff(9, 0, 0);
-  M.insert_coeff(9, 1, 1);
-
-  M.print_matrix();
-  M.print_structure();
-  std::cout << "9 * I" << std::endl << std::endl;
-
-  M.insert_coeff(9, 0, 1);
-  M.print_matrix();
-  M.print_structure();
-  std::cout << std::endl;
-
-  M.insert_coeff(1, 0, 1);
-  M.print_matrix();
-  M.print_structure();
-  std::cout << std::endl;
-
-  M.insert_coeff(0, 0, 1);
-  M.print_matrix();
-  M.print_structure();
-  std::cout << std::endl;
-
-  M.insert_coeff(0, 0, 0);
-  M.print_matrix();
-  M.print_structure();
-  std::cout << std::endl;
-
-  M.insert_coeff(0, 2, 2);
-  M.print_matrix();
-  M.print_structure();
-  std::cout << std::endl;
-
-  M.insert_coeff(0, 1, 1);
-  M.print_matrix();
-  M.print_structure();
-  std::cout << std::endl;
-
-  M.insert_coeff(0, 1, 1);
-  M.print_matrix();
-  M.print_structure();
-  std::cout << std::endl;
-
+  M.insert_coeff(5, 0, 1);
+  M.insert_coeff(6, 1, 0);
   M.insert_coeff(8, 1, 1);
+  M.insert_coeff(7, 2, 2);
+  M.insert_coeff(-30, 0, 2);
+  M.insert_coeff(15, 2, 0);
   M.print_matrix();
   M.print_structure();
   std::cout << std::endl;
+
+  std::vector<double> v{9, 3, -1};
+
+  std::cout << "vector v: " << std::endl;
+  for (auto i : v)
+    std::cout << i << " - ";
+  std::cout << std::endl;
+
+  std::pair<std::vector<double>, bool> Mv = M.mul(v);
+    if (Mv.second) {
+      std::cout << "vector M*v: " << std::endl;
+      for (auto i : Mv.first)
+        std::cout << i << " - ";
+      std::cout << std::endl;
+  } else
+    std::cout << "ERROR: couldn't compute multiplication" << std::endl;
 
   // SparseMatrix P(m, n);
   // int          mn = m * n;

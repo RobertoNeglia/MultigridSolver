@@ -7,7 +7,6 @@
 
 /*
   TODO:
-    - matrix-vector multiplication
     - operator access to elements of the matrix
 */
 
@@ -18,19 +17,22 @@ class Matrix {
   // PRIVATE MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 private:
-  const int           empty_row = -1;
-  int                 nnz;
-  int                 n_rows;
-  int                 n_cols;
-  std::vector<double> A;
-  std::vector<int>    A_col;
-  std::vector<int>    A_row;
+  // Matrix parameters
+  const int    empty_row = -1;
+  int          nnz;
+  unsigned int n_rows;
+  unsigned int n_cols;
+
+  // Storing data structures
+  std::vector<double>       A;
+  std::vector<unsigned int> A_col;
+  std::vector<int>          A_row;
 
   /**
    * Returns the reference to the element, if present
    */
   std::pair<double *, bool>
-  coeff_ref(const int i, const int j) {
+  coeff_ref(const unsigned int i, const unsigned int j) {
     int start = A_row[i];   // beginning of the row i in the vectors A and A_col
     int end   = end_row(i); // end of the row i in the vectors A and A_col
 
@@ -45,8 +47,8 @@ private:
    * Returns the end of row i of the matrix inside the vectors A and A_col
    */
   int
-  end_row(const int i) {
-      for (int k = i + 1; k < n_rows + 1; k++) {
+  end_row(const unsigned int i) const {
+      for (unsigned int k = i + 1; k < n_rows + 1; k++) {
         if (A_row[k] != -1)
           return A_row[k];
       }
@@ -60,8 +62,8 @@ private:
    * removed (= 0 is inserted in that position), DECREASE should be used
    */
   void
-  update_next_A_row(const int i, const Increment incr) {
-      for (int k = i + 1; k < n_rows; k++) {
+  update_next_A_row(const unsigned int i, const Increment incr) {
+      for (unsigned int k = i + 1; k < n_rows; k++) {
           if (A_row[k] != -1) {
             A_row[k] += incr;
         }
@@ -81,13 +83,13 @@ private:
   /**
    * Finds the position inside vectors A and A_cols of the element with coordinates (i,j)
    */
-  int
-  find_position(const int i, const int j) {
-    const int start = A_row[i];
-    const int end   = end_row(i);
+  unsigned int
+  find_position(const unsigned int i, const unsigned int j) {
+    const unsigned int start = A_row[i];
+    const unsigned int end   = end_row(i);
 
-    int k;
-    int col;
+    unsigned int k;
+    unsigned int col;
       for (k = start; k < end; k++) {
         col = A_col[k];
         if (j < col)
@@ -151,12 +153,12 @@ private:
    * Removes an element (= 0 is inserted in that position) from the matrix
    */
   void
-  remove(const int i, const int j) {
+  remove(const unsigned int i, const unsigned int j) {
     std::pair<double, bool> el = coeff(i, j);
       // check that the element is present in the matrix
       if (el.second && el.first != 0) { // element is in the matrix
-        const int start = A_row[i];
-        const int end   = end_row(i);
+        const unsigned int start = A_row[i];
+        const unsigned int end   = end_row(i);
 
         // A and A_col vectors update
         int k = find_position(i, j) - 1;
@@ -209,7 +211,7 @@ public:
    * Returns the coefficient in position (i,j) of the matrix
    */
   std::pair<double, bool> const
-  coeff(const int i, const int j) {
+  coeff(const unsigned int i, const unsigned int j) {
     if (i >= n_rows || j >= n_cols) // out of bound requests, return false
       return std::make_pair(0, false);
 
@@ -245,14 +247,35 @@ public:
       }
   }
 
+  std::pair<std::vector<double>, bool>
+  mul(const std::vector<double> v) const {
+    if (n_cols != v.size())
+      return std::make_pair(std::vector<double>(), false);
+
+    std::vector<double> Av(v.size());
+
+      for (unsigned int i = 0; i < n_rows; i++) {
+        double sum   = 0.0;
+        int    start = A_row[i];
+        int    end   = end_row(i);
+
+        for (int k = start; k < end; k++)
+          sum += A[k] * v[A_col[k]];
+
+        Av[i] = sum;
+      }
+
+    return std::make_pair(Av, true);
+  }
+
   /**
    * Prints the matrix in a human readable way
    */
   void
   print_matrix() {
     std::cout << "Number of nnz elements: " << nnz << std::endl;
-      for (int i = 0; i < n_rows; i++) {
-          for (int j = 0; j < n_cols; j++) {
+      for (unsigned int i = 0; i < n_rows; i++) {
+          for (unsigned int j = 0; j < n_cols; j++) {
             std::cout << coeff(i, j).first << "\t";
           }
         std::cout << std::endl;
