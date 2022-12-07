@@ -201,7 +201,7 @@ public:
   }
 
   int
-  nnz() {
+  get_nnz() {
     return nnz;
   }
 

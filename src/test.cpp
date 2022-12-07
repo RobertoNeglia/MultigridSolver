@@ -1,5 +1,5 @@
+#include "Matrix/matrix_r.hpp"
 #include "algebraic_multigrid.hpp"
-#include "matrix_r.hpp"
 
 /*
     TODO:
@@ -59,6 +59,31 @@ main() {
   std::cout << std::endl;
 
   M.insert_coeff(0, 0, 1);
+  M.print_matrix();
+  M.print_structure();
+  std::cout << std::endl;
+
+  M.insert_coeff(0, 0, 0);
+  M.print_matrix();
+  M.print_structure();
+  std::cout << std::endl;
+
+  M.insert_coeff(0, 2, 2);
+  M.print_matrix();
+  M.print_structure();
+  std::cout << std::endl;
+
+  M.insert_coeff(0, 1, 1);
+  M.print_matrix();
+  M.print_structure();
+  std::cout << std::endl;
+
+  M.insert_coeff(0, 1, 1);
+  M.print_matrix();
+  M.print_structure();
+  std::cout << std::endl;
+
+  M.insert_coeff(8, 1, 1);
   M.print_matrix();
   M.print_structure();
   std::cout << std::endl;
