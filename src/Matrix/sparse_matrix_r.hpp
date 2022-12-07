@@ -1,5 +1,5 @@
-#ifndef __MATRIX_R_H__
-#define __MATRIX_R_H__
+#ifndef __SPARSE_MATRIX_R_H__
+#define __SPARSE_MATRIX_R_H__
 
 #include <iostream>
 #include <map>
@@ -12,7 +12,11 @@
 
 enum Increment { DECREASE = -1, INCREASE = 1 };
 
-class Matrix {
+/**
+ * Implementation of sparse matrix that uses the CSR (Compressed Sparse Row) format to
+ * store the sparse data
+ */
+class SparseMatrix {
   //---------------------------------------------------------------------------------
   // PRIVATE MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
@@ -184,7 +188,7 @@ public:
   /**
    * Matrix class constructor
    */
-  Matrix(const int n_rows, const int n_cols) : n_rows(n_rows), n_cols(n_cols) {
+  SparseMatrix(const int n_rows, const int n_cols) : n_rows(n_rows), n_cols(n_cols) {
     // Initialize variables and structures
     nnz = 0;
     for (int i = 0; i < n_rows; i++)
