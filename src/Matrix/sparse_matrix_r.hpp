@@ -88,7 +88,7 @@ private:
    * Finds the position inside vectors A and A_cols of the element with coordinates (i,j)
    */
   unsigned int
-  find_position(const unsigned int i, const unsigned int j) {
+  find_position(const unsigned int i, const unsigned int j) const {
     const unsigned int start = A_row[i];
     const unsigned int end   = end_row(i);
 
@@ -166,7 +166,6 @@ private:
 
         // A and A_col vectors update
         int k = find_position(i, j) - 1;
-        std::cout << "k: " << k << std::endl;
         A.erase(A.begin() + k);
         A_col.erase(A_col.begin() + k);
         // end of A and A_col vectors update
@@ -197,17 +196,17 @@ public:
   }
 
   int
-  rows() {
+  rows() const {
     return n_rows;
   }
 
   int
-  cols() {
+  cols() const {
     return n_cols;
   }
 
   int
-  get_nnz() {
+  get_nnz() const {
     return nnz;
   }
 
@@ -215,7 +214,7 @@ public:
    * Returns the coefficient in position (i,j) of the matrix
    */
   std::pair<double, bool> const
-  coeff(const unsigned int i, const unsigned int j) {
+  coeff(const unsigned int i, const unsigned int j) const {
     if (i >= n_rows || j >= n_cols) // out of bound requests, return false
       return std::make_pair(0, false);
 
@@ -276,13 +275,13 @@ public:
    * Prints the matrix in a human readable way
    */
   void
-  print_matrix() {
-    std::cout << "Number of nnz elements: " << nnz << std::endl;
+  print_matrix(std::ostream &os = std::cout) const {
+    os << "Number of nnz elements: " << nnz << std::endl;
       for (unsigned int i = 0; i < n_rows; i++) {
           for (unsigned int j = 0; j < n_cols; j++) {
-            std::cout << coeff(i, j).first << "\t";
+            os << coeff(i, j).first << "\t";
           }
-        std::cout << std::endl;
+        os << std::endl;
       }
   }
 
@@ -290,21 +289,21 @@ public:
    * Prints the matrix as it is stored
    */
   void
-  print_structure() {
-    std::cout << "A: " << std::endl;
+  print_structure(std::ostream &os = std::cout) {
+    os << "A: " << std::endl;
     for (auto i : A)
-      std::cout << "\t" << i << " ";
-    std::cout << std::endl;
+      os << "\t" << i << " ";
+    os << std::endl;
 
-    std::cout << "A_col: " << std::endl;
+    os << "A_col: " << std::endl;
     for (auto i : A_col)
-      std::cout << "\t" << i << " ";
-    std::cout << std::endl;
+      os << "\t" << i << " ";
+    os << std::endl;
 
-    std::cout << "A_row: " << std::endl;
+    os << "A_row: " << std::endl;
     for (auto i : A_row)
-      std::cout << "\t" << i << " ";
-    std::cout << std::endl;
+      os << "\t" << i << " ";
+    os << std::endl;
   }
 };
 
