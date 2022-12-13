@@ -180,7 +180,7 @@ public:
     n_rows = m;
     n_cols = n;
     nnz    = 0;
-    for (int i = 0; i < n_rows; i++)
+    for (unsigned int i = 0; i < n_rows; i++)
       A_row.emplace_back(empty_row);
     A_row.emplace_back(nnz);
   }
@@ -274,6 +274,13 @@ public:
       }
 
     return std::make_pair(Av, true);
+  }
+
+  void
+  scalar_mul(const double alpha) {
+      for (int i = 0; i < A.size(); i++) {
+        A[i] *= alpha;
+      }
   }
 
   /**

@@ -52,7 +52,7 @@ public:
   }
 
   void
-  print_domain(std::ostream &os) const {
+  print_domain(std::ostream &os = std::cout) const {
       for (unsigned int i = 0; i < m; i++) {
           for (unsigned int j = 0; j < n; j++) {
             os << twodim2onedim(i, j) << "\t";

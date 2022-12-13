@@ -210,7 +210,7 @@ private:
 
   void
   print_strength_matrix(std::ostream &os = std::cout) const {
-    os << "Strenght matrix is: " << std::endl;
+    os << "Strength matrix is: " << std::endl;
       for (unsigned int i = 0; i < strength_matrix.rows(); i++) {
           for (unsigned int j = 0; j < strength_matrix.cols(); j++) {
             os << strength_matrix.coeff(i, j) << "\t";
