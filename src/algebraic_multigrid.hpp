@@ -2,18 +2,21 @@
 #define __ALGEBRAIC_MULTIGRID_H_
 
 #define DEBUG 0
-
-#include <float.h>
+#define DBL_MIN -100000000
 
 #include <algorithm>
 #include <iostream>
 #include <map>
 #include <set>
 
+#include "Matrix/dense_matrix.hpp"
+#include "Matrix/sparse_matrix_r.hpp"
 #include "domain.hpp"
-#include <Eigen/Eigen>
 
 class AlgebraicMultigrid {
+  //---------------------------------------------------------------------------------
+  // PRIVATE MEMBERS DECLARATION
+  //---------------------------------------------------------------------------------
 private:
   // Alpha parameter that determines strong connection
   const double alpha = 1.0 / 4.0;
@@ -22,7 +25,7 @@ private:
   Domain2D D;
 
   // Matrix A of the linear system
-  Eigen::SparseMatrix<double> A;
+  SparseMatrix A;
 
   // Strength set - to each point i is associated the set of points j that influence i
   //                  SET OF POINTS j THAT INFLUENCE i
@@ -38,21 +41,16 @@ private:
 
   unsigned int max_lambda;
 
-  Eigen::MatrixXi strength_matrix;
+  MatrixXi strength_matrix;
 
   std::set<unsigned int> C_points;
   std::set<unsigned int> F_points;
 
-  std::pair<unsigned int, unsigned int>
-  max_min(unsigned int a, unsigned int b) {
-    return a < b ? std::make_pair(b, a) : std::make_pair(a, b);
-  }
-
   double
   find_negative_max_in_row(const unsigned int row) const {
-    double max = -DBL_MAX + 10;
+    double max = DBL_MIN;
       for (unsigned int k = 0; k < A.cols(); k++) {
-        double a_ik = A.coeff(row, k);
+        double a_ik = A.coeff(row, k).first;
         if (k != row && -a_ik > max)
           max = -a_ik;
       }
@@ -63,12 +61,12 @@ private:
   void
   construct_strength_sets() {
     // Constructs the strength set for each point i
-      for (int i = 0; i < A.rows(); i++) {
+      for (unsigned int i = 0; i < A.rows(); i++) {
         // finds the max negative coefficient on the row, except diagonal
         double max = find_negative_max_in_row(i);
 
-          for (int j = 0; j < A.cols(); j++) {
-            double a_ij = A.coeff(i, j);
+          for (unsigned int j = 0; j < A.cols(); j++) {
+            double a_ij = A.coeff(i, j).first;
               if (j != i && -a_ij >= alpha * max) {
                 // insert j to the set of i - j influences i
                 map_point_to_strength_set[i].insert(j);
@@ -94,8 +92,8 @@ private:
   construct_strength_matrix() {
     unsigned int max = 0;
       for (auto [i, lambda_i] : map_point_to_number_of_influences) {
-        std::pair<unsigned int, unsigned int> coordinates               = D.onedim2twodim(i);
-        strength_matrix.coeffRef(coordinates.first, coordinates.second) = lambda_i;
+        std::pair<unsigned int, unsigned int> coordinates = D.onedim2twodim(i);
+        strength_matrix.insert_coeff(lambda_i, coordinates.first, coordinates.second);
         if (lambda_i > max)
           max = lambda_i;
       }
@@ -122,8 +120,8 @@ private:
   void
   update_strength(const unsigned int i, const unsigned int j) {
       if (inside_boundary(i, j) && not_C_point(i, j) && not_F_point(i, j)) {
-        unsigned int &lambda =
-          reinterpret_cast<unsigned int &>(strength_matrix.coeffRef(i, j));
+        unsigned int &lambda = strength_matrix.coeff_ref(i, j);
+        // reinterpret_cast<unsigned int &>(strength_matrix.coeffRef(i, j));
         lambda++;
         if (lambda > max_lambda)
           max_lambda = lambda;
@@ -136,19 +134,6 @@ private:
     update_strength(i, j - 1);
     update_strength(i + 1, j);
     update_strength(i, j + 1);
-
-    //   if (inside_boundary(i - 1, j) && not_C_point(i - 1, j) && not_F_point(i - 1, j)) {
-    //     strength_matrix.coeffRef(i - 1, j)++;
-    // }
-    //   if (inside_boundary(i, j - 1) && not_C_point(i, j - 1) && not_F_point(i, j - 1)) {
-    //     strength_matrix.coeffRef(i, j - 1)++;
-    // }
-    //   if (inside_boundary(i + 1, j) && not_C_point(i + 1, j) && not_F_point(i + 1, j)) {
-    //     strength_matrix.coeffRef(i + 1, j)++;
-    // }
-    //   if (inside_boundary(i, j + 1) && not_C_point(i, j + 1) && not_F_point(i, j + 1)) {
-    //     strength_matrix.coeffRef(i, j + 1)++;
-    // }
   }
 
   void
@@ -165,31 +150,10 @@ private:
     make_F_point(i, j - 1);
     make_F_point(i + 1, j);
     make_F_point(i, j + 1);
-
-    //   if (inside_boundary(i - 1, j) && not_C_point(i - 1, j)) {
-    //     F_points.insert(D.twodim2onedim(i - 1, j));
-    //     std::cout << "UP: OK" << std::endl;
-    //     update_neighbours_strength(i - 1, j);
-    // }
-    //   if (inside_boundary(i, j - 1) && not_C_point(i, j - 1)) {
-    //     F_points.insert(D.twodim2onedim(i, j - 1));
-    //     std::cout << "LEFT: OK" << std::endl;
-    //     update_neighbours_strength(i, j - 1);
-    // }
-    //   if (inside_boundary(i + 1, j) && not_C_point(i + 1, j)) {
-    //     F_points.insert(D.twodim2onedim(i + 1, j));
-    //     std::cout << "DOWN: OK" << std::endl;
-    //     update_neighbours_strength(i + 1, j);
-    // }
-    //   if (inside_boundary(i, j + 1) && not_C_point(i, j + 1)) {
-    //     F_points.insert(D.twodim2onedim(i, j + 1));
-    //     std::cout << "RIGHT: OK" << std::endl;
-    //     update_neighbours_strength(i, j + 1);
-    // }
   }
 
   void
-  make_C_point(unsigned int i, unsigned int j) {
+  make_C_point(const unsigned int i, const unsigned int j) {
     C_points.insert(D.twodim2onedim(i, j));
     neighbours_to_F_points(i, j);
       if (DEBUG) {
@@ -202,13 +166,17 @@ private:
 
   void
   coarsen() {
-      for (int i = strength_matrix.rows() - 1; i > -1; i--) {
-          for (int j = 0; j < strength_matrix.cols(); j++) {
-            unsigned int lambda = strength_matrix.coeff(i, j);
-              if (lambda >= max_lambda && not_C_point(i, j) && not_F_point(i, j)) {
-                make_C_point(i, j);
-            }
+    const unsigned int n_elements = D.rows() * D.cols();
+      while (C_points.size() + F_points.size() < n_elements) {
+          for (int i = strength_matrix.rows() - 1; i >= 0; i--) {
+              for (unsigned int j = 0; j < strength_matrix.cols(); j++) {
+                unsigned int lambda = strength_matrix.coeff(i, j);
+                  if (lambda >= max_lambda && not_C_point(i, j) && not_F_point(i, j)) {
+                    make_C_point(i, j);
+                }
+              }
           }
+        max_lambda--;
       }
   }
 
@@ -230,7 +198,7 @@ private:
           }
       }
 
-      for (int i = 0; i < A.rows(); i++) {
+      for (unsigned int i = 0; i < A.rows(); i++) {
         os << map_point_to_number_of_influences.at(i);
       }
     os << std::endl;
@@ -243,8 +211,8 @@ private:
   void
   print_strength_matrix(std::ostream &os = std::cout) const {
     os << "Strenght matrix is: " << std::endl;
-      for (int i = 0; i < strength_matrix.rows(); i++) {
-          for (int j = 0; j < strength_matrix.cols(); j++) {
+      for (unsigned int i = 0; i < strength_matrix.rows(); i++) {
+          for (unsigned int j = 0; j < strength_matrix.cols(); j++) {
             os << strength_matrix.coeff(i, j) << "\t";
           }
         os << std::endl;
@@ -275,9 +243,12 @@ private:
     is.ignore();
   }
 
+  //---------------------------------------------------------------------------------
+  // PUBLIC MEMBERS DECLARATION
+  //---------------------------------------------------------------------------------
 public:
-  AlgebraicMultigrid(Domain2D D, Eigen::SparseMatrix<double> A) : D(D), A(A) {
-    strength_matrix.resize(D.rows(), D.cols());
+  AlgebraicMultigrid(Domain2D D, SparseMatrix A) :
+    D(D), A(A), strength_matrix(D.rows(), D.cols()) {
     construct_strength_sets();
     construct_strength_matrix();
       if (DEBUG) {

@@ -32,7 +32,7 @@ private:
   std::vector<unsigned int> A_col;
   std::vector<int>          A_row;
 
-    /**
+  /**
    * Returns the end of row i of the matrix inside the vectors A and A_col
    */
   int
@@ -180,17 +180,17 @@ public:
     A_row.emplace_back(nnz);
   }
 
-  int
+  unsigned int
   rows() const {
     return n_rows;
   }
 
-  int
+  unsigned int
   cols() const {
     return n_cols;
   }
 
-  int
+  unsigned int
   get_nnz() const {
     return nnz;
   }
