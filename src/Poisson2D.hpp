@@ -9,6 +9,13 @@
 
 class Poisson2D {
 public:
+  Poisson2D(const double x0,
+            const double xL,
+            const double y0,
+            const double yL,
+            const double h) :
+    x0(x0),
+    xL(xL), y0(y0), yL(yL), h(h) {}
   class DiffusionCoefficient {
   public:
     double
@@ -43,9 +50,6 @@ public:
    */
   void
   setup() {
-    double x0 = 0.0, xL = 1.0;
-    double y0 = 0.0, yL = 1.0;
-    double h = 1.0 / 4.0;
     domain.initialize(x0, xL, y0, yL, h);
     unsigned int m = domain.rows();
     unsigned int n = domain.cols();
@@ -69,6 +73,9 @@ private:
   FunctionG            g;
   SparseMatrix         A;
   std::vector<double>  b;
+  double               x0 = 0.0, xL = 1.0;
+  double               y0 = 0.0, yL = 1.0;
+  double               h = 1.0 / 4.0;
   Domain2D             domain;
 
   void

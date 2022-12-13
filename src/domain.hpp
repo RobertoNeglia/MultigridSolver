@@ -22,11 +22,7 @@ private:
   unsigned int n, m;
 
 public:
-  Domain2D(double x0, double xL, double y0, double yL, double h) :
-    x0(x0), xL(xL), y0(y0), yL(yL), h(h) {
-    n = (xL - x0) / h;
-    m = (yL - y0) / h;
-  }
+  Domain2D() {}
 
   void
   initialize(double x0_, double xL_, double y0_, double yL_, double h_) {
