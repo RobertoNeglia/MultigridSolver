@@ -28,6 +28,13 @@ public:
     m = (yL - y0) / h;
   }
 
+  void
+  initialize(double x0_, double xL_, double y0_, double yL_, double h_) {
+    x0 = x0_, xL = xL_, y0 = y0_, yL = yL_, h = h_;
+    n = (xL - x0) / h;
+    m = (yL - y0) / h;
+  }
+
   std::pair<unsigned int, unsigned int>
   onedim2twodim(unsigned int p) const {
     return std::make_pair(p % m, p / m);

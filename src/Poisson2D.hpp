@@ -1,8 +1,11 @@
 #ifndef _POISSON2D_H__
 #define _POISSON2D_H__
 
+#include <vector>
+
 #include "Matrix/sparse_matrix_r.hpp"
 #include "algebraic_multigrid.hpp"
+#include "domain.hpp"
 
 class Poisson2D {
 public:
@@ -31,20 +34,32 @@ public:
   public:
     double
     value(const double i, const double j) {
-      return 1;
+      return i;
     }
   };
 
+  /**
+   * Setups all members of the class
+   */
   void
   setup() {
-    generate_discretized_matrix()
+    double x0 = 0.0, xL = 1.0;
+    double y0 = 0.0, yL = 1.0;
+    double h = 1.0 / 4.0;
+    domain.initialize(x0, xL, y0, yL, h);
+    unsigned int m = domain.rows();
+    unsigned int n = domain.cols();
+    b.resize(m * n);
+    A.initialize(m, n);
+    generate_discretized_matrix(m, n);
+    generate_rhs(m, n);
   }
 
   void
   solve() {
-    AlgebraicMultigrid AMG;
+    AlgebraicMultigrid AMG(domain, A);
 
-    AMG.solve;
+    AMG.solve();
   }
 
 private:
@@ -53,20 +68,34 @@ private:
   ForcingTerm          f;
   FunctionG            g;
   SparseMatrix         A;
+  std::vector<double>  b;
+  Domain2D             domain;
 
   void
-  generate_discretized_matrix(SparseMatrix &A, int m, int n) {
+  generate_rhs(const unsigned int m, const unsigned int n) {
+      for (unsigned int j = 0; j < n; j++) {
+          for (unsigned int i = 0; i < m; i++) {
+              if (j == 0 || j == (n - 1) || i == 0 || i == (m - 1)) {
+                b[j * m + i] = g.value(i, j);
+            } else
+              b[j * m + i] = f.value(i, j);
+          }
+      }
+  }
+
+  void
+  generate_discretized_matrix(const unsigned int m, const unsigned int n) {
     int mn = m * n;
       for (int i = 0; i < mn; i++) {
-        *(A.coeff_ref(i, i).first) = 4;
+        A.insert_coeff(4, i, i);
         if (i > 0 && i % m != 0)
-          *(A.coeff_ref(i, i - 1).first) = -1;
+          A.insert_coeff(-1, i, i - 1);
         if (i > m - 1)
-          *(A.coeff_ref(i, i - m).first) = -1;
+          A.insert_coeff(-1, i, i - m);
         if (i < mn - 1 && (i % m) != (m - 1))
-          *(A.coeff_ref(i, i + 1).first) = -1;
+          A.insert_coeff(-1, i, i + 1);
         if (i < mn - m)
-          *(A.coeff_ref(i, i + m).first) = -1;
+          A.insert_coeff(-1, i, i + m);
       }
   }
 };

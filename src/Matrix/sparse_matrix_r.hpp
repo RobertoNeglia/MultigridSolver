@@ -180,6 +180,17 @@ public:
     A_row.emplace_back(nnz);
   }
 
+  void
+  initialize(const int m, const int n) {
+    // Initialize variables and structures
+    n_rows = m;
+    n_cols = n;
+    nnz    = 0;
+    for (int i = 0; i < n_rows; i++)
+      A_row.emplace_back(empty_row);
+    A_row.emplace_back(nnz);
+  }
+
   unsigned int
   rows() const {
     return n_rows;

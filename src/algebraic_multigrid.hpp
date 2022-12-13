@@ -262,6 +262,8 @@ public:
     print_C_points();
     print_F_points();
   }
+  void
+  solve() {}
 };
 
 #endif
