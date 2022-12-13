@@ -172,13 +172,7 @@ public:
   /**
    * Matrix class constructor
    */
-  SparseMatrix(const int n_rows, const int n_cols) : n_rows(n_rows), n_cols(n_cols) {
-    // Initialize variables and structures
-    nnz = 0;
-    for (int i = 0; i < n_rows; i++)
-      A_row.emplace_back(empty_row);
-    A_row.emplace_back(nnz);
-  }
+  SparseMatrix() {}
 
   void
   initialize(const int m, const int n) {
