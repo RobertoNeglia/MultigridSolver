@@ -32,22 +32,7 @@ private:
   std::vector<unsigned int> A_col;
   std::vector<int>          A_row;
 
-  /**
-   * Returns the reference to the element, if present
-   */
-  std::pair<double *, bool>
-  coeff_ref(const unsigned int i, const unsigned int j) {
-    int start = A_row[i];   // beginning of the row i in the vectors A and A_col
-    int end   = end_row(i); // end of the row i in the vectors A and A_col
-
-      for (int k = start; k < end; k++) {
-        if (A_col[k] == j) // if the element is present, return it
-          return std::make_pair(&A[k], true);
-      }
-    return std::make_pair(nullptr, false);
-  }
-
-  /**
+    /**
    * Returns the end of row i of the matrix inside the vectors A and A_col
    */
   int
@@ -208,6 +193,21 @@ public:
   int
   get_nnz() const {
     return nnz;
+  }
+
+  /**
+   * Returns the reference to the element, if present
+   */
+  std::pair<double *, bool>
+  coeff_ref(const unsigned int i, const unsigned int j) {
+    int start = A_row[i];   // beginning of the row i in the vectors A and A_col
+    int end   = end_row(i); // end of the row i in the vectors A and A_col
+
+      for (int k = start; k < end; k++) {
+        if (A_col[k] == j) // if the element is present, return it
+          return std::make_pair(&A[k], true);
+      }
+    return std::make_pair(nullptr, false);
   }
 
   /**
