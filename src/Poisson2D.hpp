@@ -21,40 +21,17 @@ public:
 
   class Function2D {
   public:
+    Function2D() {}
     virtual double
-    value(const double x, const double y) const {};
+    value(const double x, const double y) const = 0;
   };
 
   class DiffusionCoefficient : public Function2D {
   public:
-    double
+    DiffusionCoefficient() {}
+    virtual double
     value(const double x, const double y) const override {
       return x + y;
-    }
-  };
-
-  class Gradient {
-  public:
-    static std::vector<double>
-    compute_gradient(const Function2D f, const double x, const double y, const double h) {
-      std::vector<double> gradient(DIM);
-
-      std::cout << "=======================" << std::endl;
-      std::cout << f.value(x + h, y) << std::endl;
-
-      gradient[0] = (f.value(x + h, y) - f.value(x - h, y)) / (2. * h);
-      gradient[1] = (f.value(x, y + h) - f.value(x, y - h)) / (2. * h);
-
-      return gradient;
-    }
-
-    static double
-    compute_divergence(const Function2D &f, const double x, const double y, const double h) {
-      std::vector<double> gradient = compute_gradient(f, x, y, h);
-      std::cout << "-----------------------------------" << std::endl;
-      std::cout << gradient[0] << gradient[1] << std::endl;
-      std::cout << "-----------------------------------" << std::endl;
-      return gradient[0] + gradient[1];
     }
   };
 
@@ -79,6 +56,25 @@ public:
     }
   };
 
+  class Gradient {
+  public:
+    static std::vector<double>
+    compute_gradient(const Function2D &f, const double x, const double y, const double h) {
+      std::vector<double> gradient(DIM);
+
+      gradient[0] = (f.value(x + h, y) - f.value(x - h, y)) / (2. * h);
+      gradient[1] = (f.value(x, y + h) - f.value(x, y - h)) / (2. * h);
+
+      return gradient;
+    }
+
+    static double
+    compute_divergence(const Function2D &f, const double x, const double y, const double h) {
+      std::vector<double> gradient = compute_gradient(f, x, y, h);
+      return gradient[0] + gradient[1];
+    }
+  };
+
   /**
    * Setups all members of the class
    */
@@ -89,9 +85,8 @@ public:
     unsigned int m = domain.rows();
     unsigned int n = domain.cols();
     b.resize(m * n);
-    A.initialize(m, n);
+    A.initialize(m * n, m * n);
     generate_discretized_matrix(m, n);
-
     A.print_matrix();
     generate_rhs(m, n);
   }
@@ -142,13 +137,11 @@ private:
           A.insert_coeff(-1, i, i + m);
       }
 
-    std::cout << Gradient::compute_divergence(mu, 10, 10, 1.e-6) << std::endl;
-
-      for (unsigned int i = 0; i < m; i++) {
-          for (unsigned int j = 0; j < n; j++) {
-            A.scalar_mul(Gradient::compute_divergence(mu, i, j, 1.e-6) / (h * h));
-          }
-      }
+    // for (unsigned int i = 0; i < m; i++) {
+    //     for (unsigned int j = 0; j < n; j++) {
+    //       A.scalar_mul(Gradient::compute_divergence(mu, i, j, 1.e-6) / (h * h));
+    //     }
+    // }
   }
 };
 
