@@ -1,0 +1,16 @@
+1. It is good and fine once in a lifetime to write your own matrix class, you learn a lot. But eventually, use 
+classes provided by well extablished libraries, like Eigen or others, as you have done!
+
+In any case, for a sparse matrix it is simpler to proceed this way: having two state for the matrix, compressed and
+uncompressed. Initially the matrix is in an uncompressed state and the tools to add elements in a matrix puts them 
+in a map with key a pair of integers (i,j) and the value the corresponding matrix value (other techniques are possible). 
+When you have finished reading the matrix elements and filled the map, you call a method, typically called compress(), that build the 
+Compressed Sparse Row or Compressed Sparse Column stucture, deletes the map and set the 
+compressed state to true.
+All algorithm that need efficiency, like matrix vector product, operate on the comressed matrix. The uncompressed state
+is only for the initial setup. This is what is done in the Eigen matrices, for instance.
+
+2. Your project is probably more challenging. I see you have just started. Keep it simple, the important thing here is to learn the basics. 
+You can do more complex stuff in the exam project, if you wish.
+
+
