@@ -255,8 +255,9 @@ public:
       }
   }
 
+  // computes A*v
   std::pair<std::vector<double>, bool>
-  mul(const std::vector<double> v) const {
+  mul(const std::vector<double> &v) const {
     if (n_cols != v.size())
       return std::make_pair(std::vector<double>(), false);
 
@@ -278,7 +279,7 @@ public:
 
   void
   scalar_mul(const double alpha) {
-      for (int i = 0; i < A.size(); i++) {
+      for (unsigned int i = 0; i < A.size(); i++) {
         A[i] *= alpha;
       }
   }

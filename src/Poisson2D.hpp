@@ -24,14 +24,22 @@ public:
     Function2D() {}
     virtual double
     value(const double x, const double y) const = 0;
+
+    virtual double
+    value() const = 0;
   };
 
   class DiffusionCoefficient : public Function2D {
   public:
     DiffusionCoefficient() {}
-    virtual double
+    double
     value(const double x, const double y) const override {
-      return x + y;
+      return 1.0;
+    }
+
+    double
+    value() const override {
+      return 1.0;
     }
   };
 
@@ -42,7 +50,12 @@ public:
   public:
     double
     value(const double x, const double y) const override {
-      return 5;
+      return -5.0 * std::exp(x) * exp(-2.0 * y);
+    }
+
+    double
+    value() const override {
+      return 1.0;
     }
   };
   /**
@@ -52,7 +65,12 @@ public:
   public:
     double
     value(const double x, const double y) const override {
-      return std::sin(x) + std::cos(y);
+      return std::exp(x) * std::exp(-2.0 * y);
+    }
+
+    double
+    value() const override {
+      return 1.0;
     }
   };
 
@@ -84,18 +102,23 @@ public:
     domain.print_domain();
     unsigned int m = domain.rows();
     unsigned int n = domain.cols();
+
     b.resize(m * n);
+    generate_rhs(m, n);
+
     A.initialize(m * n, m * n);
     generate_discretized_matrix(m, n);
     A.print_matrix();
-    generate_rhs(m, n);
+
+    A.scalar_mul(mu.value());
+    A.print_matrix();
   }
 
   void
   solve() {
-    AlgebraicMultigrid AMG(domain, A);
+    AlgebraicMultigrid AMG(domain, A, b);
 
-    AMG.solve();
+    AMG.solve(b);
   }
 
 private:
