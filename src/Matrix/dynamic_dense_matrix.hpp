@@ -1,24 +1,27 @@
-#ifndef _DENSE_MATRIX_H__
-#define _DENSE_MATRIX_H__
+#ifndef _DYNAMIC_DENSE_MATRIX_H__
+#define _DYNAMIC_DENSE_MATRIX_H__
 
 #include <iostream>
+#include <map>
 #include <vector>
 
-class MatrixI {
+class MatrixDI {
   //---------------------------------------------------------------------------------
   // PRIVATE MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 private:
-  unsigned int                  m, n;
-  std::vector<std::vector<int>> M;
+  unsigned int                    zero = 0;
+  unsigned int                    m = 0, n = 0;
+  std::vector<std::map<int, int>> M;
 
   //---------------------------------------------------------------------------------
   // PUBLIC MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 public:
-  MatrixI() {}
-  MatrixI(const unsigned int m, const unsigned int n) : m(m), n(n) {
-    M.resize(m, std::vector<int>(n));
+  MatrixDI() {
+    zero = 0;
+    m    = 0;
+    n    = 0;
   }
 
   unsigned int
@@ -33,7 +36,17 @@ public:
 
   void
   insert_coeff(const int val, const unsigned int i, const unsigned int j) {
-    M.at(i).at(j) = val;
+      if (i + 1 > M.size()) {
+        M.resize(i + 1);
+        m = i + 1;
+    }
+
+    const auto it = M[i].find(j);
+      if (it == M[i].end()) { // element not present
+        n                                     = std::max(n, j + 1);
+        (*M.at(i).emplace(j, 0).first).second = val;
+    }
+    (*it).second = val;
   }
 
   // element access in read only (const version)
@@ -41,10 +54,20 @@ public:
   coeff(const unsigned int i, const unsigned int j) const {
     return M.at(i).at(j);
   }
+
   // element access in write (returns non-const reference)
   int &
   coeff_ref(const unsigned int i, const unsigned int j) {
     return M.at(i).at(j);
+  }
+
+  void
+  print(std::ostream &os = std::cout) {
+      for (unsigned int i = 0; i < M.size(); i++) {
+          for (auto [j, key] : M.at(i)) {
+            os << "(" << i << "," << j << ") = " << key << std::endl;
+          }
+      }
   }
 };
 

@@ -10,6 +10,7 @@
 #include <set>
 
 #include "Matrix/dense_matrix.hpp"
+#include "Matrix/dynamic_dense_matrix.hpp"
 #include "Matrix/sparse_matrix_r.hpp"
 #include "domain.hpp"
 #include "jacobi_r.hpp"
@@ -23,8 +24,7 @@ private:
   const double alpha = 1.0 / 4.0;
 
   // number of iterations before & after multigrid correction
-  const double nu1 = 500;
-  const double nu2 = 1000;
+  const double nu = 1000;
 
   // Domain of the problem
   Domain2D D;
@@ -47,9 +47,10 @@ private:
   // Associates to each point i the number of points that are influenced by i
   std::map<unsigned int, unsigned int> map_point_to_number_of_influences;
 
-  unsigned int max_lambda;
+  int max_lambda;
 
-  MatrixXi strength_matrix;
+  MatrixI  strength_matrix;
+  MatrixDI coarsened_domain;
 
   std::set<unsigned int> C_points;
   std::set<unsigned int> F_points;
@@ -131,7 +132,7 @@ private:
   void
   update_strength(const unsigned int i, const unsigned int j) {
       if (inside_boundary(i, j) && not_C_point(i, j) && not_F_point(i, j)) {
-        unsigned int &lambda = strength_matrix.coeff_ref(i, j);
+        int &lambda = strength_matrix.coeff_ref(i, j);
         // reinterpret_cast<unsigned int &>(strength_matrix.coeffRef(i, j));
         lambda++;
         if (lambda > max_lambda)
@@ -181,12 +182,13 @@ private:
   }
 
   void
-  coarsen_domain() {
+  C_F_splitting() {
     const unsigned int n_elements = D.rows() * D.cols();
+
       while (C_points.size() + F_points.size() < n_elements) {
-          for (int i = strength_matrix.rows() - 1; i >= 0; i--) {
+          for (unsigned int i = 0; i < strength_matrix.rows(); i++) {
               for (unsigned int j = 0; j < strength_matrix.cols(); j++) {
-                unsigned int lambda = strength_matrix.coeff(i, j);
+                int lambda = strength_matrix.coeff(i, j);
                   if (lambda >= max_lambda && not_C_point(i, j) && not_F_point(i, j)) {
                     make_C_point(i, j);
                 }
@@ -194,6 +196,16 @@ private:
           }
         max_lambda--;
       }
+  }
+
+  void
+  coarsen_domain() {
+      for (auto i : C_points) {
+        std::pair<unsigned int, unsigned int> ij = D.onedim2twodim(i);
+        coarsened_domain.insert_coeff(i, ij.first, ij.second);
+      }
+
+    coarsened_domain.print();
   }
 
   std::vector<double>
@@ -240,15 +252,6 @@ private:
       }
     return Ac;
   }
-
-  // [0 1 2]
-  // [0 0.5 1 1.5 2 2]
-
-  // [0 1 2 3]
-  // [0 - 1 - 2 - 3 -]
-
-  // [0 1 2]
-  // [- 0 - 1 - 2]
 
   std::vector<double>
   interpolate_error(const std::vector<double> e) {
@@ -356,74 +359,138 @@ private:
   // PUBLIC MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 public:
+  // Apply multigrid starting from physical domain
   AlgebraicMultigrid(const Domain2D &D, const SparseMatrix &A, const std::vector<double> &b) :
     D(D), A(A), b(b), strength_matrix(D.rows(), D.cols()) {
+    std::cout << "Setting up AMG:" << std::endl;
+    std::cout << "Matrix size: " << A.rows() << "x" << A.cols() << std::endl;
     construct_strength_sets();
     construct_strength_matrix();
       if (DEBUG) {
         print_strength_sets();
+        print_strength_matrix();
     }
-    print_strength_matrix();
 
-    coarsen_domain();
+    C_F_splitting();
+    // coarsen_domain();
 
-    print_strength_matrix();
-    print_C_points();
-    print_F_points();
+      if (DEBUG) {
+        print_C_points();
+        print_F_points();
+    }
 
     SparseMatrix Ac = coarsen_matrix(A);
     // Ac.print_matrix();
+    std::cout << "DONE!" << std::endl;
+  }
+
+  AlgebraicMultigrid(const std::set<unsigned int> &c_points,
+                     const SparseMatrix           &A,
+                     const std::vector<double>    &b) :
+    A(A),
+    b(b) {
+    std::cout << "Setting up AMG:" << std::endl;
+    std::cout << "Matrix size: " << A.rows() << "x" << A.cols() << std::endl;
+    construct_strength_sets();
+    construct_strength_matrix();
+      if (DEBUG) {
+        print_strength_sets();
+        print_strength_matrix();
+    }
+
+    C_F_splitting();
+
+      if (DEBUG) {
+        print_C_points();
+        print_F_points();
+    }
+
+    SparseMatrix Ac = coarsen_matrix(A);
+    // Ac.print_matrix();
+    std::cout << "DONE!" << std::endl;
   }
 
   void
-  solve(std::vector<double> &x0) {
-    unsigned int max_it = 1000;
+  solve(std::vector<double> &x) {
+    std::cout << "Solving AMG:" << std::endl;
+    unsigned int max_it = 2000;
     double       tol    = 1.e-6;
-    Jacobi       jac(A, b, tol, nu1);
-    // std::vector<double> x0(A.cols(), 0.0);
-    int flag = jac.solve(x0);
+    Jacobi       jac(A, b, tol, nu);
+
+    int flag = jac.solve(x);
+    std::cout << "JAC1: flag " << flag << std::endl;
 
     int tot_iter = jac.get_iter();
+    std::cout << "JAC1: n_iter " << jac.get_iter() << std::endl;
+    std::cout << "JAC1: tol_achieved " << jac.get_tol_achieved() << std::endl;
 
-    std::cout << "n_iter jac nu1 " << tot_iter << std::endl << "flag " << flag << std::endl;
-    // r_k = b - A*x_k - compute residual at step k on fine grid
-    std::vector<double> r_nu1 = jac.subvec(b, A.mul(x0).first);
+    // r_h = b - A*x_k - compute residual at step k on fine grid
+    std::pair<std::vector<double>, bool> Ax_pair = A.mul(x);
+    if (!Ax_pair.second)
+      return;
+    std::vector<double> r_h = jac.subvec(b, Ax_pair.first);
 
-    auto r2h = coarsen_residual(r_nu1);
+    auto r_2h = coarsen_residual(r_h);
 
-    SparseMatrix A2h = coarsen_matrix(A);
+    SparseMatrix A_2h = coarsen_matrix(A);
 
-    // AlgebraicMultigrid  amg(D, A2h, r2h);
-    std::vector<double> error2h(r2h.size(), 1.0);
+    // AlgebraicMultigrid  amg(D, A_2h, r_2h);
+    std::vector<double> e_2h(r_2h.size(), 1.0);
 
-    Jacobi coarse_Jac(A2h, r2h, tol, max_it);
-    flag = coarse_Jac.solve(error2h);
+    Jacobi coarse_Jac1(A_2h, r_2h, tol, max_it);
 
-    std::cout << "flag coarse jac " << flag << std::endl;
+    flag = coarse_Jac1.solve(e_2h);
+    std::cout << "COARSEJAC1: flag " << flag << std::endl;
 
-    tot_iter += coarse_Jac.get_iter();
-    std::cout << "coarseJac n_iter " << coarse_Jac.get_iter() << std::endl;
-
-    auto ef_nu1 = interpolate_error(error2h);
-
-    // for (auto i : ef_nu1) {
-    //   std::cout << i << " - ";
-    // }
-    std::cout << std::endl;
-
-    auto x1 = jac.addvec(x0, ef_nu1);
-
-    Jacobi jacnu2(A, b, tol, nu2);
-    flag = jacnu2.solve(x1);
-
-    std::cout << "flag jac 2 : " << flag << std::endl;
-
-    tot_iter += jacnu2.get_iter();
+    tot_iter += coarse_Jac1.get_iter();
+    std::cout << "COARSEJAC1: n_iter " << coarse_Jac1.get_iter() << std::endl;
+    std::cout << "COARSEJAC1: tol_achieved " << coarse_Jac1.get_tol_achieved() << std::endl;
     std::cout << "tot amg iter: " << tot_iter << std::endl;
 
-      for (auto i : x1) {
-        std::cout << i << std::endl;
-      }
+    auto e_h = interpolate_error(e_2h);
+
+    jac.addvec_inplace(x, e_h);
+
+    flag = jac.solve(x);
+    std::cout << "JAC2: flag " << flag << std::endl;
+
+    tot_iter += jac.get_iter();
+    std::cout << "JAC2: n_iter " << jac.get_iter() << std::endl;
+    std::cout << "JAC2: tol_achieved " << jac.get_tol_achieved() << std::endl;
+    std::cout << "tot amg iter: " << tot_iter << std::endl;
+
+    /*
+        Ax_pair = A.mul(x);
+        if (!Ax_pair.second)
+          return;
+
+        r_h  = jac.subvec(b, Ax_pair.first);
+        r_2h = coarsen_residual(r_h);
+        e_2h.resize(r_2h.size(), 1.0);
+
+        Jacobi coarse_Jac2(A_2h, r_2h, tol, max_it);
+
+        flag = coarse_Jac2.solve(e_2h);
+        std::cout << "COARSEJAC2: flag " << flag << std::endl;
+
+        tot_iter += coarse_Jac2.get_iter();
+        std::cout << "COARSEJAC2: n_iter " << coarse_Jac2.get_iter() << std::endl;
+        std::cout << "COARSEJAC2: tol_achieved " << coarse_Jac2.get_tol_achieved() <<
+        std::endl; std::cout << "tot amg iter: " << tot_iter << std::endl;
+
+        e_h = interpolate_error(e_2h);
+        x   = jac.addvec_inplace(x, e_h);
+
+        flag = jac.solve(x);
+        std::cout << "JAC2: flag " << flag << std::endl;
+
+        tot_iter += jac.get_iter();
+        std::cout << "JAC2: n_iter " << jac.get_iter() << std::endl;
+        std::cout << "JAC2: tol_achieved " << jac.get_tol_achieved() << std::endl;
+        std::cout << "tot amg iter: " << tot_iter << std::endl;
+
+        std::cout << "DONE!" << std::endl;
+    */
   }
 };
 

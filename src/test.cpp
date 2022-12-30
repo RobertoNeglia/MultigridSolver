@@ -1,4 +1,5 @@
 #include "Matrix/dense_matrix.hpp"
+#include "Matrix/dynamic_dense_matrix.hpp"
 #include "Matrix/sparse_matrix_r.hpp"
 #include "Poisson2D.hpp"
 #include "algebraic_multigrid.hpp"
@@ -34,6 +35,17 @@ generate_discretized_matrix(SparseMatrix &A, int m, int n) {
     }
 }
 
+bool
+equal_to(std::vector<double> v, double val) {
+  bool eq = true;
+    for (unsigned int i = 0; i < v.size(); i++) {
+      if (std::abs(val - v[i]) > 1.e-2)
+        eq = false;
+    }
+
+  return eq;
+}
+
 int
 main() {
   // 4x3
@@ -54,25 +66,18 @@ main() {
   // poisson.solve();
 
   Domain2D D;
-  D.initialize(0.0, 1.0, 0.0, 1.0, 1.0 / 16.0);
+  D.initialize(0.0, 1., 0.0, 1., 1.0 / 32.0);
 
   int          n = D.cols() * D.rows();
   SparseMatrix A;
   A.initialize(n, n);
 
   generate_discretized_matrix(A, D.rows(), D.cols());
-  // for (int i = 0; i < n; i++) {
-  //   A.insert_coeff(2, i, i);
-  //   if (i > 0)
-  //     A.insert_coeff(-1, i, i - 1);
-  //   if (i < n - 1)
-  //     A.insert_coeff(-1, i, i + 1);
-  // }
 
   // exact sol
   std::vector<double> x(A.cols(), 10.);
   // initial guess
-  std::vector<double> x_guess(A.cols(), -100.);
+  std::vector<double> x_guess(A.cols(), 1.);
 
   std::vector<double> b = A.mul(x).first;
 
@@ -80,13 +85,44 @@ main() {
 
   amg.solve(x_guess);
 
-  Jacobi jac(A, b, 1.e-6, 1000);
+  std::vector<double> x_guess_jac(A.cols(), 1.);
 
-  std::vector<double> x_guess_jac(A.cols(), -100.);
+  Jacobi jac(A, b, 1.e-6, 5000);
 
   jac.solve(x_guess_jac);
+  std::cout << "NAIVE JAC: n_iter " << jac.get_iter() << std::endl;
+  std::cout << "NAIVE JAC: tol_achived " << jac.get_tol_achieved() << std::endl;
 
-  std::cout << "jac tot iter: " << jac.get_iter();
+  if (equal_to(x_guess, 10.0))
+    std::cout << "AMG correct solution found" << std::endl;
+  else
+    std::cout << ":(" << std::endl;
+
+  if (equal_to(x_guess_jac, 10.0))
+    std::cout << "JAC correct solution found" << std::endl;
+  else
+    std::cout << ":(" << std::endl;
+
+  // std::cout << "jac tot iter: " << jac.get_iter() << std::endl;
+
+  // MatrixDI dynamic_m;
+
+  // dynamic_m.insert_coeff(100, 1, 2);
+  // dynamic_m.insert_coeff(100, 2, 2);
+
+  // std::cout << "m - " << dynamic_m.rows() << " n - " << dynamic_m.cols() << std::endl;
+
+  // dynamic_m.print();
+  // int val;
+  //   try {
+  //     val = dynamic_m.coeff(1, 1);
+  //   }
+  //   catch (const std::exception &e) {
+  //     // std::cerr << e.what() << '\n';
+  //     val = 0;
+  //   }
+
+  // std::cout << val << std::endl;
 
   // A.print_matrix();
 

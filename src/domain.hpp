@@ -31,7 +31,7 @@ public:
     m = (yL - y0) / h;
   }
 
-  std::pair<unsigned int, unsigned int>
+    std::pair<unsigned int, unsigned int>
   onedim2twodim(unsigned int p) const {
     return std::make_pair(p % m, p / m);
   }

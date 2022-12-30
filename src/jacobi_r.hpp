@@ -11,13 +11,17 @@ class Jacobi {
 private:
   SparseMatrix        A;
   std::vector<double> b;
-  double              tol;
-  unsigned int        max_iter;
-  unsigned int        n_iter = 0;
+  const double        tol;
+  const unsigned int  max_iter;
+  double              tol_achieved;
+  unsigned int        n_iter;
 
 public:
   Jacobi(SparseMatrix A, std::vector<double> b, double tol, unsigned int max_iter) :
-    A(A), b(b), tol(tol), max_iter(max_iter) {}
+    A(A), b(b), tol(tol), max_iter(max_iter) {
+    tol_achieved = 0;
+    n_iter       = 0;
+  }
 
   int
   solve(std::vector<double> &x) {
@@ -37,8 +41,8 @@ public:
     r_k = subvec(b, b_k);
 
       if ((resid = norm(r_k) / normb) <= tol) {
-        tol    = resid;
-        n_iter = 0;
+        tol_achieved = resid;
+        n_iter       = 0;
         return 0;
     }
 
@@ -57,14 +61,14 @@ public:
         r_k = subvec(b, b_k);
 
           if ((resid = norm(r_k) / normb) <= tol) {
-            tol    = resid;
-            n_iter = i;
+            tol_achieved = resid;
+            n_iter       = i;
             return 1;
         }
       }
 
-    tol    = resid;
-    n_iter = max_iter;
+    tol_achieved = resid;
+    n_iter       = max_iter;
     return 2;
   }
 
@@ -81,23 +85,13 @@ public:
   }
 
   unsigned int
-  get_iter() {
+  get_iter() const {
     return n_iter;
   }
 
-  void
-  set_max_iter(const unsigned int new_max_iter) {
-    max_iter = new_max_iter;
-  }
-
-  unsigned int
-  get_tol_achieved() {
-    return tol;
-  }
-
-  void
-  setTol(double tol) {
-    tol = tol;
+  double
+  get_tol_achieved() const {
+    return tol_achieved;
   }
 
   double
@@ -110,7 +104,7 @@ public:
   }
 
   std::vector<double>
-  addvec(std::vector<double> a, std::vector<double> y) {
+  addvec(const std::vector<double> &a, const std::vector<double> &y) const {
     std::vector<double> result(a.size(), 0.0);
       if (a.size() != y.size()) {
         std::cout << "lele non e' possibile";
@@ -123,8 +117,21 @@ public:
     return result;
   }
 
+  std::vector<double> &
+  addvec_inplace(std::vector<double> &a, const std::vector<double> &y) const {
+      if (a.size() != y.size()) {
+        std::cout << "lele non e' possibile";
+        exit(0);
+    }
+      // result.reserve(a.size());
+      for (unsigned int i = 0; i < a.size(); i++) {
+        a[i] = a[i] + y[i];
+      }
+    return a;
+  }
+
   std::vector<double>
-  subvec(std::vector<double> a, std::vector<double> y) {
+  subvec(const std::vector<double> &a, const std::vector<double> &y) const {
     std::vector<double> result(a.size(), 0.0);
       if (a.size() != y.size()) {
         std::cout << "lele non e' possibile";

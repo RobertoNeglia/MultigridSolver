@@ -302,7 +302,7 @@ public:
    * Prints the matrix as it is stored
    */
   void
-  print_structure(std::ostream &os = std::cout) {
+  print_structure(std::ostream &os = std::cout) const {
     os << "A: " << std::endl;
     for (auto i : A)
       os << "\t" << i << " ";
