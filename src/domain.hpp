@@ -31,13 +31,13 @@ public:
     m = (yL - y0) / h;
   }
 
-    std::pair<unsigned int, unsigned int>
-  onedim2twodim(unsigned int p) const {
-    return std::make_pair(p % m, p / m);
+  static std::pair<unsigned int, unsigned int>
+  onedim2twodim(unsigned int p, unsigned int _m) {
+    return std::make_pair(p % _m, p / _m);
   }
 
-  unsigned int
-  twodim2onedim(unsigned int i, unsigned int j) const {
+  static unsigned int
+  twodim2onedim(unsigned int i, unsigned int j, unsigned int m) {
     return j * m + i;
   }
 
@@ -55,7 +55,7 @@ public:
   print_domain(std::ostream &os = std::cout) const {
       for (unsigned int i = 0; i < m; i++) {
           for (unsigned int j = 0; j < n; j++) {
-            os << twodim2onedim(i, j) << "\t";
+            os << twodim2onedim(i, j, m) << "\t";
           }
         os << std::endl;
       }

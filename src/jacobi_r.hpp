@@ -94,7 +94,7 @@ public:
     return tol_achieved;
   }
 
-  double
+  static double
   norm(const std::vector<double> a) {
     double n = 0;
       for (unsigned int i = 0; i < a.size(); i++) {

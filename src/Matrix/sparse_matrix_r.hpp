@@ -277,6 +277,47 @@ public:
     return std::make_pair(Av, true);
   }
 
+  std::pair<SparseMatrix, bool>
+  mul(const SparseMatrix &B) const {
+    if (n_cols != B.rows())
+      return std::make_pair(SparseMatrix(), false);
+
+    SparseMatrix AB;
+    AB.initialize(n_rows, B.n_cols);
+
+      for (unsigned int i = 0; i < AB.rows(); i++) {
+          for (unsigned int j = 0; j < AB.cols(); j++) {
+            double sum   = 0.0;
+            int    start = A_row[i];
+            int    end   = end_row(i);
+
+            for (int k = start; k < end; k++)
+              sum += A[k] * B.coeff(A_col[k], j).first;
+
+            AB.insert_coeff(sum, i, j);
+          }
+      }
+
+    return std::make_pair(AB, true);
+  }
+
+  SparseMatrix
+  transpose() const {
+    SparseMatrix At;
+    At.initialize(n_cols, n_rows);
+
+      for (unsigned int i = 0; i < n_rows; i++) {
+        int start = A_row[i];
+        int end   = end_row(i);
+
+          for (int k = start; k < end; k++) {
+            At.insert_coeff(A[k], A_col[k], i);
+          }
+      }
+
+    return At;
+  }
+
   void
   scalar_mul(const double alpha) {
       for (unsigned int i = 0; i < A.size(); i++) {

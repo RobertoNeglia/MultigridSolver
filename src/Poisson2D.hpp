@@ -116,7 +116,7 @@ public:
 
   void
   solve() {
-    AlgebraicMultigrid AMG(domain, A, b);
+    AlgebraicMultigrid AMG(A, b);
 
     AMG.solve(b);
   }
