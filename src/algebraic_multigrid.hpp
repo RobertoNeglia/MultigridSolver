@@ -28,7 +28,15 @@ private:
   /**
    * Pre&Post smoother number of iterations
    */
-  const double nu = 200;
+  const double pre_nu;
+  const double post_nu;
+
+  const double       tol;
+  const unsigned int max_iter;
+
+  double       tol_achieved;
+  unsigned int n_iter;
+  unsigned int jac_tot_iter;
 
   /**
    * System matrix
@@ -60,14 +68,23 @@ private:
 
   unsigned int max_lambda;
 
-  MatrixI  strength_matrix;
-  MatrixDI coarsened_domain;
-
   std::set<unsigned int> C_points;
   std::set<unsigned int> F_points;
 
   // Associates to each point i the c-points that are used to interpolate i
   std::map<unsigned int, std::set<unsigned int>> map_point_to_interpolating_points;
+
+  template <typename T>
+  unsigned int
+  get_pos_in_set(std::set<T> set, T val) {
+    unsigned int i = 0;
+      for (auto it = set.begin(); it != set.end(); it++) {
+        if (*it == val)
+          return i;
+        i++;
+      }
+    return set.size();
+  }
 
   double
   find_negative_max_in_row(const unsigned int row) const {
@@ -83,7 +100,8 @@ private:
 
   void
   construct_strength_sets() {
-    // Constructs the strength set for each point i
+    std::cout << "STRENGTH SETS: CONSTRUCTION..." << std::endl;
+      // Constructs the strength set for each point i
       for (unsigned int i = 0; i < A.rows(); i++) {
         // finds the max negative coefficient on the row, except diagonal
         double max = find_negative_max_in_row(i);
@@ -106,11 +124,14 @@ private:
           }
       }
 
+    max_lambda = 0;
       for (auto [i, s_i] : map_point_to_strength_transpose_set) {
         map_point_to_number_of_influences[i] = s_i.size();
         if (s_i.size() > max_lambda)
           max_lambda = s_i.size();
       }
+
+    std::cout << "STRENGTH SETS: DONE!" << std::endl;
   }
 
   bool
@@ -169,36 +190,49 @@ private:
 
   void
   C_F_splitting() {
+    std::cout << "CF SPLITTING: START..." << std::endl;
     const unsigned int n_elements = A.rows();
+    // std::cout << "n_elements: " << n_elements << std::endl;
+    // std::cout << "max_lambda: " << max_lambda << std::endl;
+    // press_to_continue();
       while (C_points.size() + F_points.size() < n_elements) {
           for (auto [i, lambda_i] : map_point_to_number_of_influences) {
               if (lambda_i >= max_lambda && not_C_point(i) && not_F_point(i)) {
                 // C point found
+                // std::cout << "C point found! " << std::endl;
+                // press_to_continue();
                 make_C_point(i);
             }
           }
         if (max_lambda > 0)
           max_lambda--;
       }
+    std::cout << "CF SPLITTING: DONE!" << std::endl;
   }
 
   std::vector<double>
   coarsen_residual(const std::vector<double> &r) {
     std::vector<double> rc(C_points.size());
 
-    double val;
-    auto   c_it = C_points.begin();
+    auto c_it = C_points.begin();
+
       for (unsigned int i = 0; i < rc.size(); i++) {
-          if (i == 0) {
-            val = (r[*c_it] + r[*c_it + 1]) / 2;
-          } else if (i == rc.size() - 1) {
-            val = (r[*c_it - 1] + r[*c_it]) / 2;
-          } else {
-            val = (r[*c_it - 1] + r[*c_it] + r[*c_it + 1]) / 3;
-          }
-        rc[i] = val;
+        rc[i] = r[*c_it];
         c_it++;
       }
+
+    // double val;
+    // for (unsigned int i = 0; i < rc.size(); i++) {
+    //     if (i == 0) {
+    //       val = (r[*c_it] + r[*c_it + 1]) / 2;
+    //     } else if (i == rc.size() - 1) {
+    //       val = (r[*c_it - 1] + r[*c_it]) / 2;
+    //     } else {
+    //       val = (r[*c_it - 1] + r[*c_it] + r[*c_it + 1]) / 3;
+    //     }
+    //   rc[i] = val;
+    //   c_it++;
+    // }
 
     return rc;
   }
@@ -239,21 +273,40 @@ private:
   interpolate_error(const std::vector<double> e) {
     std::vector<double> ef(C_points.size() + F_points.size());
 
-      if (*(C_points.begin()) == 0) {
-          for (unsigned int i = 0; i < e.size() - 1; i++) {
-            ef[2 * i]     = e[i];
-            ef[2 * i + 1] = (e[i] + e[i + 1]) / 2;
-          }
-        ef[ef.size() - 1] = e[e.size() - 1];
-      } else {
-        ef[0] = e[0];
-        ef[1] = e[0];
-          for (unsigned int i = 1; i < e.size(); i++) {
-            ef[2 * i] = (e[i - 1] + e[i]) / 2;
-            if (2 * i + 1 < ef.size())
-              ef[2 * i + 1] = e[i];
-          }
+    auto j = e.begin();
+      for (unsigned int i : C_points) {
+        ef[i] = *j;
       }
+
+    double       val = 0.0;
+    unsigned int cnt = 0;
+      for (unsigned int i : F_points) {
+          for (unsigned int j : map_point_to_strength_set[i]) {
+              if (C_points.contains(j)) {
+                cnt++;
+                val += e[get_pos_in_set(C_points, j)];
+            }
+          }
+        val /= cnt;
+        ef[i] = val;
+      }
+
+    // if (*(C_points.begin()) == 0) {
+    //   std::cout << "PIPPOOOOOO" << std::endl;
+    //     for (unsigned int i = 0; i < e.size() - 1; i++) {
+    //       ef[2 * i]     = e[i];
+    //       ef[2 * i + 1] = (e[i] + e[i + 1]) / 2;
+    //     }
+    //   ef[ef.size() - 1] = e[e.size() - 1];
+    // } else {
+    //   ef[0] = e[0];
+    //   ef[1] = e[0];
+    //     for (unsigned int i = 1; i < e.size(); i++) {
+    //       ef[2 * i] = (e[i - 1] + e[i]) / 2;
+    //       if (2 * i + 1 < ef.size() - 1)
+    //         ef[2 * i + 1] = e[i];
+    //     }
+    // }
 
     return ef;
   }
@@ -283,17 +336,6 @@ private:
 
       for (auto [i, lambda_i] : map_point_to_number_of_influences) {
         os << "Number of points influenced by " << i << ": " << lambda_i << std::endl;
-      }
-  }
-
-  void
-  print_strength_matrix(std::ostream &os = std::cout) const {
-    os << "Strength matrix is: " << std::endl;
-      for (unsigned int i = 0; i < strength_matrix.rows(); i++) {
-          for (unsigned int j = 0; j < strength_matrix.cols(); j++) {
-            os << strength_matrix.coeff(i, j) << "\t";
-          }
-        os << std::endl;
       }
   }
 
@@ -337,12 +379,27 @@ private:
     is.ignore();
   }
 
+  void
+  print_vector(std::vector<double> v) const {
+      for (auto i : v) {
+        std::cout << i << " - ";
+      }
+    std::cout << std::endl;
+  }
+
   //---------------------------------------------------------------------------------
   // PUBLIC MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 public:
   // Apply multigrid starting from physical domain
-  AlgebraicMultigrid(const SparseMatrix &A, const std::vector<double> &b) : A(A), b(b) {
+  AlgebraicMultigrid(const SparseMatrix        &A,
+                     const std::vector<double> &b,
+                     const unsigned int         pre_nu,
+                     const unsigned int         post_nu,
+                     const double               tol,
+                     const unsigned int         max_iter) :
+    pre_nu(pre_nu),
+    post_nu(post_nu), tol(tol), max_iter(max_iter), A(A), b(b) {
     std::cout << "Setting up AMG:" << std::endl;
     std::cout << "Matrix size: " << A.rows() << "x" << A.cols() << std::endl;
 
@@ -362,70 +419,132 @@ public:
     std::cout << "SETUP DONE!" << std::endl;
   }
 
-  void
-  solve(std::vector<double> &x) {
-    std::cout << "Solving AMG:" << std::endl;
-    unsigned int max_it   = 1000;
-    int          tot_iter = 0;
-    double       tol      = 1.e-6;
+  int
+  solve(std::vector<double> &x /*, int n_levels , std::vector<double> exac_sol*/) {
+    if (DEBUG)
+      std::cout << "Solving AMG:" << std::endl;
+    int          tot_iter            = 0;
+    double       inner_solver_tol    = 9 * 1.e-1;
+    unsigned int inner_solver_max_it = 1000;
     double       normb;
+    double       resid;
 
-    Jacobi jac(A, b, tol, nu);
     normb = Jacobi::norm(b);
       if (normb == 0.0) {
         normb = 1.0;
     }
 
-    int flag = jac.solve(x);
-    std::cout << "\tJAC1: flag " << flag << std::endl;
+      for (unsigned int i = 0; i < max_iter; i++) {
+        // pre-smoothing
+        Jacobi pre_smoother(A, b, tol, pre_nu);
+        int    flag = pre_smoother.solve(x);
+        tot_iter += pre_smoother.get_iter();
+          if (DEBUG) {
+            std::cout << "\t PRE_SMOOTHER: flag " << flag << std::endl;
+            std::cout << "\t PRE_SMOOTHER: n_iter " << pre_smoother.get_iter() << std::endl;
+            std::cout << "\t PRE_SMOOTHER: tol_achieved " << pre_smoother.get_tol_achieved()
+                      << std::endl;
+        }
 
-    tot_iter += jac.get_iter();
-    std::cout << "\tJAC1: n_iter " << jac.get_iter() << std::endl;
-    std::cout << "\tJAC1: tol_achieved " << jac.get_tol_achieved() << std::endl;
+        // r_h = b - A*x_k - compute residual at step k on fine grid
+        std::pair<std::vector<double>, bool> Ax_pair = A.mul(x);
+        if (!Ax_pair.second)
+          return -1;
 
-    // r_h = b - A*x_k - compute residual at step k on fine grid
-    std::pair<std::vector<double>, bool> Ax_pair = A.mul(x);
-    if (!Ax_pair.second)
-      return;
-    std::vector<double> r_h = jac.subvec(b, Ax_pair.first);
+        std::vector<double> r_h = Jacobi::subvec(b, Ax_pair.first);
+        // print_vector(r_h);
+        std::vector<double> r_2h = coarsen_residual(r_h);
+        // print_vector(r_2h);
 
-    auto r_2h = coarsen_residual(r_h);
+        // press_to_continue();
 
-    SparseMatrix A_2h = coarsen_matrix(A);
+        SparseMatrix        A_2h = coarsen_matrix(A);
+        std::vector<double> e_2h(r_2h.size(), 1.0);
 
-    // AlgebraicMultigrid  amg(D, A_2h, r_2h);
-    std::vector<double> e_2h(r_2h.size(), 1.0);
+        Jacobi coarse_smoother(A_2h, r_2h, inner_solver_tol, inner_solver_max_it);
+        flag = coarse_smoother.solve(e_2h);
+        tot_iter += coarse_smoother.get_iter();
+          if (DEBUG) {
+            std::cout << "\t COARSE_SOLVER: flag " << flag << std::endl;
+            std::cout << "\t COARSE_SOLVER: n_iter " << coarse_smoother.get_iter()
+                      << std::endl;
+            std::cout << "\t COARSE_SOLVER: tol_achieved "
+                      << coarse_smoother.get_tol_achieved() << std::endl;
+        }
 
-      if (A.rows() > 3 && A.cols() > 3) {
-        AlgebraicMultigrid inner_AMG(A_2h, r_2h);
+        // // multilevel
+        //   if (n_levels > 0) {
+        //     AlgebraicMultigrid inner_AMG(A_2h, r_2h, pre_nu, post_nu, tol, max_iter);
+        //     inner_AMG.solve(e_2h, n_levels - 1);
+        //   } else {
+        //     Jacobi coarse_smoother(A_2h, r_2h, inner_solver_tol, inner_solver_max_it);
+        //     flag = coarse_smoother.solve(e_2h);
+        //     tot_iter += coarse_smoother.get_iter();
+        //       if (DEBUG) {
+        //         std::cout << "\t COARSE_SOLVER: flag " << flag << std::endl;
+        //         std::cout << "\t COARSE_SOLVER: n_iter " << coarse_smoother.get_iter()
+        //                   << std::endl;
+        //         std::cout << "\t COARSE_SOLVER: tol_achieved "
+        //                   << coarse_smoother.get_tol_achieved() << std::endl;
+        //     }
+        //   }
 
-        inner_AMG.solve(e_2h);
-      } else {
-        Jacobi coarse_Jac1(A_2h, r_2h, tol, max_it);
+        std::vector<double> e_h = interpolate_error(e_2h);
+        // print_vector(e_h);
+        // press_to_continue();
 
-        flag = coarse_Jac1.solve(e_2h);
-        std::cout << "\tCOARSEJAC1: flag " << flag << std::endl;
+        Jacobi::addvec_inplace(x, e_h);
 
-        tot_iter += coarse_Jac1.get_iter();
-        std::cout << "\tCOARSEJAC1: n_iter " << coarse_Jac1.get_iter() << std::endl;
-        std::cout << "\tCOARSEJAC1: tol_achieved " << coarse_Jac1.get_tol_achieved()
-                  << std::endl;
-        std::cout << "\ttot amg iter: " << tot_iter << std::endl;
+        // std::vector<double> e = Jacobi::subvec(exac_sol, x);
+        // print_vector(e);
+
+        // post-smoothing
+        Jacobi post_smoother(A, b, tol, post_nu);
+        flag = post_smoother.solve(x);
+        tot_iter += post_smoother.get_iter();
+          if (DEBUG) {
+            std::cout << "\t POST_SMOOTHER: flag " << flag << std::endl;
+            std::cout << "\t POST_SMOOTHER: n_iter " << post_smoother.get_iter() << std::endl;
+            std::cout << "\t POST_SMOOTHER: tol_achieved " << post_smoother.get_tol_achieved()
+                      << std::endl;
+        }
+
+        std::pair<std::vector<double>, bool> Ax_k_pair = A.mul(x);
+        if (!Ax_k_pair.second)
+          return -1;
+        std::vector<double> r_k = Jacobi::subvec(b, Ax_k_pair.first);
+
+          if ((resid = Jacobi::norm(r_k) / normb) <= tol) {
+            tol_achieved = resid;
+            n_iter       = i;
+            jac_tot_iter = tot_iter;
+            std::cout << "TOLERANCE ACHIEVED" << std::endl;
+            std::cout << "SOLVING: DONE!" << std::endl;
+            return 1;
+        }
       }
 
-    auto e_h = interpolate_error(e_2h);
-
-    jac.addvec_inplace(x, e_h);
-
-    flag = jac.solve(x);
-    std::cout << "\tJAC2: flag " << flag << std::endl;
-
-    tot_iter += jac.get_iter();
-    std::cout << "\tJAC2: n_iter " << jac.get_iter() << std::endl;
-    std::cout << "\tJAC2: tol_achieved " << jac.get_tol_achieved() << std::endl;
-    std::cout << "\ttot amg iter: " << tot_iter << std::endl;
-
+    tol_achieved = resid;
+    n_iter       = max_iter;
+    jac_tot_iter = tot_iter;
+    std::cout << "ITERATION LIMIT REACHED" << std::endl;
     std::cout << "SOLVING: DONE!" << std::endl;
+    return 2;
+  }
+
+  unsigned int
+  get_iter() const {
+    return n_iter;
+  }
+
+  double
+  get_tol_achieved() const {
+    return tol_achieved;
+  }
+
+  unsigned int
+  get_jac_tot_iter() const {
+    return jac_tot_iter;
   }
 };
 

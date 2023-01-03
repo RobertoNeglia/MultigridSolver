@@ -103,8 +103,8 @@ public:
     return sqrt(n);
   }
 
-  std::vector<double>
-  addvec(const std::vector<double> &a, const std::vector<double> &y) const {
+  static std::vector<double>
+  addvec(const std::vector<double> &a, const std::vector<double> &y) {
     std::vector<double> result(a.size(), 0.0);
       if (a.size() != y.size()) {
         std::cout << "lele non e' possibile";
@@ -117,8 +117,8 @@ public:
     return result;
   }
 
-  std::vector<double> &
-  addvec_inplace(std::vector<double> &a, const std::vector<double> &y) const {
+  static std::vector<double> &
+  addvec_inplace(std::vector<double> &a, const std::vector<double> &y) {
       if (a.size() != y.size()) {
         std::cout << "lele non e' possibile";
         exit(0);
@@ -130,8 +130,8 @@ public:
     return a;
   }
 
-  std::vector<double>
-  subvec(const std::vector<double> &a, const std::vector<double> &y) const {
+  static std::vector<double>
+  subvec(const std::vector<double> &a, const std::vector<double> &y) {
     std::vector<double> result(a.size(), 0.0);
       if (a.size() != y.size()) {
         std::cout << "lele non e' possibile";

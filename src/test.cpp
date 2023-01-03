@@ -3,6 +3,7 @@
 #include "Matrix/sparse_matrix_r.hpp"
 #include "Poisson2D.hpp"
 #include "algebraic_multigrid.hpp"
+#include "chrono"
 #include "domain.hpp"
 #include "jacobi_r.hpp"
 
@@ -35,15 +36,32 @@ generate_discretized_matrix(SparseMatrix &A, int m, int n) {
     }
 }
 
+void
+print_vector(std::vector<double> v) {
+    for (auto i : v) {
+      std::cout << i << " - ";
+    }
+  std::cout << std::endl;
+}
+
 bool
 equal_to(std::vector<double> v, double val) {
   bool eq = true;
     for (unsigned int i = 0; i < v.size(); i++) {
-      if (std::abs(val - v[i]) > 1.e-2)
+      if (std::abs(val - v[i]) > 1.e-6)
         eq = false;
     }
 
   return eq;
+}
+
+auto
+timeit(const std::function<void()> &f) {
+  using namespace std::chrono;
+  const auto start = high_resolution_clock::now();
+  f();
+  const auto end = high_resolution_clock::now();
+  return duration_cast<milliseconds>(end - start).count();
 }
 
 int
@@ -93,32 +111,48 @@ main() {
 
   // exact sol
   std::vector<double> x(A.cols(), 10.);
-  // initial guess
-  std::vector<double> x_guess(A.cols(), 1.);
-
+  // system rhs
   std::vector<double> b = A.mul(x).first;
-
-  AlgebraicMultigrid amg(A, b);
-
-  amg.solve(x_guess);
-
+  // Jacobi initial guess
   std::vector<double> x_guess_jac(A.cols(), 1.);
 
-  Jacobi jac(A, b, 1.e-6, 5000);
+  unsigned int jac_iter = 5000;
 
-  jac.solve(x_guess_jac);
+  Jacobi jac(A, b, 1.e-10, jac_iter);
+
+  auto dt = timeit([&]() { jac.solve(x_guess_jac); });
+  // jac.solve(x_guess_jac);
+  std::cout << "NAIVE JAC: time elapsed " << dt << " [ms]" << std::endl;
   std::cout << "NAIVE JAC: n_iter " << jac.get_iter() << std::endl;
   std::cout << "NAIVE JAC: tol_achived " << jac.get_tol_achieved() << std::endl;
+
+  std::vector<double> e_jac = Jacobi::subvec(x, x_guess_jac);
+  // print_vector(e_jac);
+
+  // AMG initial guess
+  std::vector<double> x_guess(A.cols(), 1.);
+
+  AlgebraicMultigrid amg(A, b, 20, 20, 1.e-10, 500);
+
+  int flag;
+  dt = timeit([&]() { flag = amg.solve(x_guess); });
+  // flag = amg.solve(x_guess /*,x*/);
+
+  std::cout << "AMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
+  std::cout << "AMG FLAG: " << flag << std::endl;
+  std::cout << "AMG TOT ITERATIONS: " << amg.get_iter() << std::endl;
+  std::cout << "AMG TOLERANCE ACHIEVED: " << amg.get_tol_achieved() << std::endl;
+  std::cout << "AMG JACOBI TOT_ITER: " << amg.get_jac_tot_iter() << std::endl;
 
   if (equal_to(x_guess, 10.0))
     std::cout << "AMG correct solution found" << std::endl;
   else
     std::cout << ":(" << std::endl;
 
-  if (equal_to(x_guess_jac, 10.0))
-    std::cout << "JAC correct solution found" << std::endl;
-  else
-    std::cout << ":(" << std::endl;
+  // if (equal_to(x_guess_jac, 10.0))
+  //   std::cout << "JAC correct solution found" << std::endl;
+  // else
+  //   std::cout << ":(" << std::endl;
 
   return 0;
 }
