@@ -9,6 +9,11 @@
 #include "algebraic_multigrid.hpp"
 #include "domain.hpp"
 
+#define UNUSED(expr) \
+    do {             \
+      (void)(expr);  \
+  } while (0)
+
 class Poisson2D {
 public:
   Poisson2D(const double x0,
@@ -24,9 +29,6 @@ public:
     Function2D() {}
     virtual double
     value(const double x, const double y) const = 0;
-
-    virtual double
-    value() const = 0;
   };
 
   class DiffusionCoefficient : public Function2D {
@@ -34,11 +36,8 @@ public:
     DiffusionCoefficient() {}
     double
     value(const double x, const double y) const override {
-      return 1.0;
-    }
-
-    double
-    value() const override {
+      UNUSED(x);
+      UNUSED(y);
       return 1.0;
     }
   };
@@ -52,11 +51,6 @@ public:
     value(const double x, const double y) const override {
       return -5.0 * std::exp(x) * exp(-2.0 * y);
     }
-
-    double
-    value() const override {
-      return 1.0;
-    }
   };
   /**
    * Dirichlet boundary conditions
@@ -66,11 +60,6 @@ public:
     double
     value(const double x, const double y) const override {
       return std::exp(x) * std::exp(-2.0 * y);
-    }
-
-    double
-    value() const override {
-      return 1.0;
     }
   };
 
@@ -110,7 +99,7 @@ public:
     generate_discretized_matrix(m, n);
     A.print_matrix();
 
-    A.scalar_mul(mu.value());
+    // A.scalar_mul(mu.value());
     A.print_matrix();
   }
 
