@@ -101,7 +101,7 @@ main() {
   // poisson.solve();
 
   Domain2D D;
-  D.initialize(0.0, 1.0, 0.0, 1.0, 1.0 / 16.0);
+  D.initialize(0.0, 1.0, 0.0, 2.0, 1.0 / 3.0);
 
   int          n = D.cols() * D.rows();
   SparseMatrix A;
@@ -109,30 +109,37 @@ main() {
 
   generate_discretized_matrix(A, D.rows(), D.cols());
 
-  // exact sol
-  std::vector<double> x(A.cols(), 10.);
+  double exact_sol = 1.0;
+  // exact solution of the linear system
+  std::vector<double> x(A.cols(), exact_sol);
   // system rhs
   std::vector<double> b = A.mul(x).first;
   // Jacobi initial guess
-  std::vector<double> x_guess_jac(A.cols(), 1.);
+  double              initial_guess = 0.0;
+  std::vector<double> x_guess_jac(A.cols(), initial_guess);
 
-  unsigned int jac_iter = 5000;
+  const double       tol          = 1.e-10;
+  const unsigned int jac_max_iter = 1000;
+  const unsigned int amg_max_iter = 1000;
 
-  Jacobi jac(A, b, 1.e-10, jac_iter);
+  const unsigned int amg_pre_nu  = 10;
+  const unsigned int amg_post_nu = 10;
+
+  Jacobi jac(A, b, tol, jac_max_iter);
 
   auto dt = timeit([&]() { jac.solve(x_guess_jac); });
-  // jac.solve(x_guess_jac);
+
   std::cout << "NAIVE JAC: time elapsed " << dt << " [ms]" << std::endl;
   std::cout << "NAIVE JAC: n_iter " << jac.get_iter() << std::endl;
   std::cout << "NAIVE JAC: tol_achived " << jac.get_tol_achieved() << std::endl;
 
   std::vector<double> e_jac = Jacobi::subvec(x, x_guess_jac);
-  // print_vector(e_jac);
+  print_vector(e_jac);
 
   // AMG initial guess
-  std::vector<double> x_guess(A.cols(), 1.);
+  std::vector<double> x_guess(A.cols(), initial_guess);
 
-  AlgebraicMultigrid amg(A, b, 20, 20, 1.e-10, 500);
+  AlgebraicMultigrid amg(A, b, amg_pre_nu, amg_post_nu, tol, amg_max_iter);
 
   int flag;
   dt = timeit([&]() { flag = amg.solve(x_guess); });
@@ -144,7 +151,7 @@ main() {
   std::cout << "AMG TOLERANCE ACHIEVED: " << amg.get_tol_achieved() << std::endl;
   std::cout << "AMG JACOBI TOT_ITER: " << amg.get_jac_tot_iter() << std::endl;
 
-  if (equal_to(x_guess, 10.0))
+  if (equal_to(x_guess, exact_sol))
     std::cout << "AMG correct solution found" << std::endl;
   else
     std::cout << ":(" << std::endl;
