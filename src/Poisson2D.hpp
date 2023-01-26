@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "Matrix/sparse_matrix_r.hpp"
+#include "LinearAlgebra/sparse_matrix.hpp"
 #include "algebraic_multigrid.hpp"
 #include "domain.hpp"
 
@@ -18,6 +18,8 @@ public:
             const double h) :
     x0(x0),
     xL(xL), y0(y0), yL(yL), h(h) {}
+
+  Poisson2D(const unsigned int N_) : N(N_) {}
 
   class Function2D {
   public:
@@ -115,6 +117,7 @@ private:
   double               x0, xL;
   double               y0, yL;
   double               h;
+  unsigned int         N;
   Domain2D             domain;
 
   void

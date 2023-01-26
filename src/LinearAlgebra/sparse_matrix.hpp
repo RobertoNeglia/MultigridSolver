@@ -3,8 +3,8 @@
 
 #include <iomanip>
 #include <iostream>
-#include <map>
-#include <vector>
+
+#include "vector.hpp"
 
 /*
   TODO:
@@ -29,9 +29,12 @@ private:
   unsigned int n_cols;
 
   // Storing data structures
-  std::vector<double>       A;
-  std::vector<unsigned int> A_col;
-  std::vector<int>          A_row;
+  Vector<double>       A;
+  Vector<unsigned int> A_col;
+  Vector<int>          A_row;
+  // std::vector<double>       A;
+  // std::vector<unsigned int> A_col;
+  // std::vector<int>          A_row;
 
   /**
    * Returns the end of row i of the matrix inside the vectors A and A_col
@@ -274,9 +277,9 @@ public:
   }
 
   // computes A*v
-  std::vector<double> &
+  Vector<double> &
   mul(const std::vector<double> &v) const {
-    std::vector<double> *Av = new std::vector<double>();
+    Vector<double> *Av = new Vector<double>();
       if (n_cols != v.size()) {
         std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
         return *Av;
@@ -383,5 +386,11 @@ public:
     os << std::endl;
   }
 };
+
+void
+press_to_continue(std::ostream &os = std::cout, std::istream &is = std::cin) {
+  os << "Press enter to continue: ";
+  is.ignore();
+}
 
 #endif

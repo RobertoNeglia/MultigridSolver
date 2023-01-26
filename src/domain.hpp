@@ -19,6 +19,7 @@ private:
   double       x0, xL;
   double       y0, yL;
   double       h;
+  unsigned int N;
   unsigned int n, m;
 
 public:
@@ -29,6 +30,16 @@ public:
     x0 = x0_, xL = xL_, y0 = y0_, yL = yL_, h = h_;
     n = (xL - x0) / h;
     m = (yL - y0) / h;
+  }
+
+  void
+  initialize(const unsigned int N_) {
+    N  = N_;
+    x0 = 0.0;
+    xL = 1.0;
+    y0 = 0.0;
+    yL = 1.0;
+    h  = 1.0 / N;
   }
 
   static std::pair<unsigned int, unsigned int>

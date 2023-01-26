@@ -1,63 +1,133 @@
-// #include <mpi.h>
-
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <vector>
-// #include "matrix.hpp"
-#include "jacobi.hpp"
 
-using namespace std;
+#include "LinearAlgebra/IterativeSolvers/algebraic_multigrid.hpp"
+#include "LinearAlgebra/IterativeSolvers/geometric_multigrid.hpp"
+#include "LinearAlgebra/sparse_matrix.hpp"
 
-int
-main() {
-  Matrix         m = Matrix(50, 50);
-  Matrix         d = Matrix(50, 50);
-  vector<double> b(50, -1.0);
-  vector<double> x(50, 1.0);
-    // x[30] = 1.0;
-    for (unsigned int k = 0; k < x.size(); k++) {
-      m.insertElement(3, k, k);
-        if (k < x.size() - 1) {
-          m.insertElement(-1, k + 1, k);
-          m.insertElement(-1, k, k + 1);
-      }
+void
+print_vector(std::vector<double> v) {
+    for (auto i : v) {
+      std::cout << i << " - ";
     }
-  m.print();
-  d = m.JacPrec();
-  d.print();
-
-  Jacobi jac = Jacobi(m, b);
-  jac.solve(x);
-  cout << endl;
-    for (unsigned int i = 0; i < x.size(); i++) {
-      cout << x[i] << " ";
-    }
-  cout << endl;
-
-  // vector<double> prova = m.Multiplication(x);
-  // for (unsigned int i = 0; i < x.size() ; i++)
-  // {
-  //     cout << prova[i] << " ";
-  // }
-  // cout << endl;
-  // b = m.Multiplication(x);
-  // cout << "Il vettore risultante e' " << endl;
-  // for (unsigned int i = 0; i < b.size(); i++)
-  // {
-  //     cout << b[i] << " ";
-  // }
-  return 0;
+  std::cout << std::endl;
 }
 
-/*
-    TODO:
-        - discretizzazione problema
-        - SERIAL
-            - implementazione matrice
-            - implementazione smoother (Jacobi/GS)
-            - coarsening
+bool
+equal_to(std::vector<double> v, double val) {
+  bool eq = true;
+    for (unsigned int i = 0; i < v.size(); i++) {
+      if (std::abs(val - v[i]) > 1.e-6)
+        eq = false;
+    }
 
-        - PARALLEL
-            - parallelizzare smoother
-            - parallelizzare coarsening
-*/
+  return eq;
+}
+
+void
+generate_discretized_matrix(SparseMatrix &A, int m, int n) {
+  int mn = m * n;
+    for (int i = 0; i < mn; i++) {
+      A.insert_coeff(4, i, i);
+      if (i > 0 && i % m != 0)
+        A.insert_coeff(-1, i, i - 1);
+      if (i > m - 1)
+        A.insert_coeff(-1, i, i - m);
+      if (i < mn - 1 && (i % m) != (m - 1))
+        A.insert_coeff(-1, i, i + 1);
+      if (i < mn - m)
+        A.insert_coeff(-1, i, i + m);
+    }
+}
+
+auto
+timeit(const std::function<void()> &f) {
+  using namespace std::chrono;
+  const auto start = high_resolution_clock::now();
+  f();
+  const auto end = high_resolution_clock::now();
+  return duration_cast<milliseconds>(end - start).count();
+}
+
+int
+main(int argc, char **argv) {
+  unsigned int N;
+    if (argc == 2) {
+      N = std::atoi(argv[1]);
+    } else {
+      N = 10;
+    }
+
+  unsigned int n = (N - 1) * (N - 1);
+
+  SparseMatrix A;
+  A.initialize(n, n);
+
+  generate_discretized_matrix(A, N - 1, N - 1);
+
+  double exact_sol = 1.0;
+  // exact solution of the linear system
+  std::vector<double> x(A.cols(), exact_sol);
+  // system rhs
+  std::vector<double> b = A.mul(x);
+  // print_vector(b);
+
+  // GMG initial guess
+  double         initial_guess = 0.0;
+  Vector<double> jac_guess(A.cols(), initial_guess);
+  Vector<double> gmg_guess(A.cols(), initial_guess);
+  Vector<double> amg_guess(A.cols(), initial_guess);
+
+  const unsigned int mg_pre_nu  = 10;
+  const unsigned int mg_post_nu = 10;
+
+  const double       tol      = 1.e-8;
+  const unsigned int max_iter = 5000;
+
+  Jacobi jac(A, b, tol, max_iter);
+
+  auto dt = timeit([&]() { jac.solve(jac_guess); });
+
+  std::cout << "NAIVE JAC: time elapsed " << dt << " [ms]" << std::endl;
+  std::cout << "NAIVE JAC: n_iter " << jac.get_iter() << std::endl;
+  std::cout << "NAIVE JAC: tol_achived " << jac.get_tol_achieved() << std::endl << std::endl;
+
+  std::cout << "===============================================" << std::endl << std::endl;
+
+  GeometricMultigrid gmg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
+  gmg.setup();
+
+  int flag;
+  dt = timeit([&]() { flag = gmg.solve(gmg_guess); });
+
+  std::cout << "GMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
+  std::cout << "GMG FLAG: " << flag << std::endl;
+  std::cout << "GMG TOT ITERATIONS: " << gmg.get_iter() << std::endl;
+  std::cout << "GMG TOLERANCE ACHIEVED: " << gmg.get_tol_achieved() << std::endl;
+  std::cout << "GMG JACOBI TOT_ITER: " << gmg.get_tot_smoother_iter() << std::endl;
+
+  if (equal_to(gmg_guess, exact_sol))
+    std::cout << "GMG correct solution found" << std::endl;
+  else
+    std::cout << ":(" << std::endl;
+
+  std::cout << "===============================================" << std::endl << std::endl;
+
+  AlgebraicMultigrid amg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
+  amg.setup();
+
+  dt = timeit([&]() { flag = amg.solve(amg_guess); });
+
+  std::cout << "AMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
+  std::cout << "AMG FLAG: " << flag << std::endl;
+  std::cout << "AMG TOT ITERATIONS: " << amg.get_iter() << std::endl;
+  std::cout << "AMG TOLERANCE ACHIEVED: " << amg.get_tol_achieved() << std::endl;
+  std::cout << "AMG JACOBI TOT_ITER: " << amg.get_tot_smoother_iter() << std::endl;
+
+  if (equal_to(amg_guess, exact_sol))
+    std::cout << "AMG correct solution found" << std::endl;
+  else
+    std::cout << ":(" << std::endl;
+}

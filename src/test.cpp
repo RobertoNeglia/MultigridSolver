@@ -1,6 +1,5 @@
-#include "Matrix/dense_matrix.hpp"
-#include "Matrix/dynamic_dense_matrix.hpp"
-#include "Matrix/sparse_matrix_r.hpp"
+
+#include "LinearAlgebra/sparse_matrix.hpp"
 #include "Poisson2D.hpp"
 #include "algebraic_multigrid.hpp"
 #include "chrono"
@@ -100,14 +99,15 @@ main() {
   // poisson.setup();
   // poisson.solve();
 
-  Domain2D D;
-  D.initialize(0.0, 1.0, 0.0, 1.0, 1.0 / 32.0);
+  // Domain2D D;
+  // D.initialize(0.0, 1.0, 0.0, 1.0, 1.0 / 32.0);
 
-  int          n = D.cols() * D.rows();
+  unsigned int N = 6;
+  int          n = (N - 1) * (N - 1);
   SparseMatrix A;
   A.initialize(n, n);
 
-  generate_discretized_matrix(A, D.rows(), D.cols());
+  generate_discretized_matrix(A, N - 1, N - 1);
 
   double exact_sol = 1.0;
   // exact solution of the linear system
