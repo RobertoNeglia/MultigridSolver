@@ -9,11 +9,6 @@
 #include "algebraic_multigrid.hpp"
 #include "domain.hpp"
 
-#define UNUSED(expr) \
-    do {             \
-      (void)(expr);  \
-  } while (0)
-
 class Poisson2D {
 public:
   Poisson2D(const double x0,

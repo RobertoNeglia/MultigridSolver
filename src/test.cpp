@@ -101,7 +101,7 @@ main() {
   // poisson.solve();
 
   Domain2D D;
-  D.initialize(0.0, 1.0, 0.0, 2.0, 1.0 / 3.0);
+  D.initialize(0.0, 1.0, 0.0, 1.0, 1.0 / 32.0);
 
   int          n = D.cols() * D.rows();
   SparseMatrix A;
@@ -113,13 +113,14 @@ main() {
   // exact solution of the linear system
   std::vector<double> x(A.cols(), exact_sol);
   // system rhs
-  std::vector<double> b = A.mul(x).first;
+  std::vector<double> b = A.mul(x);
+  // print_vector(b);
   // Jacobi initial guess
   double              initial_guess = 0.0;
   std::vector<double> x_guess_jac(A.cols(), initial_guess);
 
-  const double       tol          = 1.e-10;
-  const unsigned int jac_max_iter = 1000;
+  const double       tol          = 1.e-8;
+  const unsigned int jac_max_iter = 4000;
   const unsigned int amg_max_iter = 1000;
 
   const unsigned int amg_pre_nu  = 10;
@@ -134,15 +135,17 @@ main() {
   std::cout << "NAIVE JAC: tol_achived " << jac.get_tol_achieved() << std::endl;
 
   std::vector<double> e_jac = Jacobi::subvec(x, x_guess_jac);
-  print_vector(e_jac);
+  // print_vector(e_jac);
+  std::cout << std::endl << std::endl;
 
   // AMG initial guess
   std::vector<double> x_guess(A.cols(), initial_guess);
 
+  const unsigned int n_levels = 0;
   AlgebraicMultigrid amg(A, b, amg_pre_nu, amg_post_nu, tol, amg_max_iter);
 
   int flag;
-  dt = timeit([&]() { flag = amg.solve(x_guess); });
+  dt = timeit([&]() { flag = amg.solve(x_guess, n_levels); });
   // flag = amg.solve(x_guess /*,x*/);
 
   std::cout << "AMG TIME ELAPSED: " << dt << " [ms]" << std::endl;

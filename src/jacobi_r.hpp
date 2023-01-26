@@ -17,7 +17,7 @@ private:
   unsigned int        n_iter;
 
 public:
-  Jacobi(SparseMatrix A, std::vector<double> b, double tol, unsigned int max_iter) :
+  Jacobi(SparseMatrix &A, std::vector<double> &b, double tol, unsigned int max_iter) :
     A(A), b(b), tol(tol), max_iter(max_iter) {
     tol_achieved = 0;
     n_iter       = 0;
@@ -25,17 +25,13 @@ public:
 
   int
   solve(std::vector<double> &x) {
-    std::pair<std::vector<double>, bool> Ax = A.mul(x);
-    if (!Ax.second)
-      return -1;
-
     double resid;
     double normb = norm(b);
     if (normb == 0.0)
       normb = 1.0;
 
     // result of A*x_k
-    std::vector<double> b_k = Ax.first;
+    std::vector<double> b_k = A.mul(x);
     // residual at step k: r_k = b - A*x_k = b - b_k;
     std::vector<double> r_k(b_k.size());
     r_k = subvec(b, b_k);
@@ -52,11 +48,11 @@ public:
 
       for (unsigned int i = 0; i < max_iter; i++) {
         // calculate the action of the preconditioner on the residual
-        p = P.mul(r_k).first;
+        p = P.mul(r_k);
         // update the value of the solution
         x = addvec(x, p);
         // update the value of A*x_k
-        b_k = A.mul(x).first;
+        b_k = A.mul(x);
         // calculate the residual
         r_k = subvec(b, b_k);
 

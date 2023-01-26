@@ -1,6 +1,7 @@
 #ifndef __SPARSE_MATRIX_R_H__
 #define __SPARSE_MATRIX_R_H__
 
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -169,10 +170,27 @@ private:
   // PUBLIC MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 public:
-  /**
-   * Matrix class constructor
-   */
   SparseMatrix() {}
+
+  SparseMatrix(const SparseMatrix &M) = default;
+
+  static void *
+  operator new(std::size_t count) {
+    return ::operator new(count);
+  }
+
+  SparseMatrix &
+  operator=(SparseMatrix const &M) {
+      if (this != &M) { // handles M = M
+        nnz    = M.nnz;
+        n_rows = M.n_rows;
+        n_cols = M.n_cols;
+        A      = M.A;
+        A_col  = M.A_col;
+        A_row  = M.A_row;
+    }
+    return *this;
+  }
 
   void
   initialize(const int m, const int n) {
@@ -256,12 +274,15 @@ public:
   }
 
   // computes A*v
-  std::pair<std::vector<double>, bool>
+  std::vector<double> &
   mul(const std::vector<double> &v) const {
-    if (n_cols != v.size())
-      return std::make_pair(std::vector<double>(), false);
+    std::vector<double> *Av = new std::vector<double>();
+      if (n_cols != v.size()) {
+        std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
+        return *Av;
+    }
 
-    std::vector<double> Av(v.size());
+    Av->resize(n_rows);
 
       for (unsigned int i = 0; i < n_rows; i++) {
         double sum   = 0.0;
@@ -271,22 +292,24 @@ public:
         for (int k = start; k < end; k++)
           sum += A[k] * v[A_col[k]];
 
-        Av[i] = sum;
+        Av->operator[](i) = sum;
       }
 
-    return std::make_pair(Av, true);
+    return *Av;
   }
 
-  std::pair<SparseMatrix, bool>
+  SparseMatrix &
   mul(const SparseMatrix &B) const {
-    if (n_cols != B.rows())
-      return std::make_pair(SparseMatrix(), false);
+    SparseMatrix *AB = new SparseMatrix;
+      if (n_cols != B.rows()) {
+        std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
+        return *AB;
+    }
 
-    SparseMatrix AB;
-    AB.initialize(n_rows, B.n_cols);
+    AB->initialize(n_rows, B.n_cols);
 
-      for (unsigned int i = 0; i < AB.rows(); i++) {
-          for (unsigned int j = 0; j < AB.cols(); j++) {
+      for (unsigned int i = 0; i < AB->rows(); i++) {
+          for (unsigned int j = 0; j < AB->cols(); j++) {
             double sum   = 0.0;
             int    start = A_row[i];
             int    end   = end_row(i);
@@ -294,28 +317,28 @@ public:
             for (int k = start; k < end; k++)
               sum += A[k] * B.coeff(A_col[k], j).first;
 
-            AB.insert_coeff(sum, i, j);
+            AB->insert_coeff(sum, i, j);
           }
       }
 
-    return std::make_pair(AB, true);
+    return *AB;
   }
 
-  SparseMatrix
+  SparseMatrix &
   transpose() const {
-    SparseMatrix At;
-    At.initialize(n_cols, n_rows);
+    SparseMatrix *At = new SparseMatrix;
+    At->initialize(n_cols, n_rows);
 
       for (unsigned int i = 0; i < n_rows; i++) {
         int start = A_row[i];
         int end   = end_row(i);
 
           for (int k = start; k < end; k++) {
-            At.insert_coeff(A[k], A_col[k], i);
+            At->insert_coeff(A[k], A_col[k], i);
           }
       }
 
-    return At;
+    return *At;
   }
 
   void
@@ -333,7 +356,7 @@ public:
     os << "Number of nnz elements: " << nnz << std::endl;
       for (unsigned int i = 0; i < n_rows; i++) {
           for (unsigned int j = 0; j < n_cols; j++) {
-            os << coeff(i, j).first << "\t";
+            os << std::setprecision(2) << coeff(i, j).first << "\t";
           }
         os << std::endl;
       }
