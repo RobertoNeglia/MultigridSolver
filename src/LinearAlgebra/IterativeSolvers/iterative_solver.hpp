@@ -22,6 +22,11 @@ public:
   virtual int
   solve(Vector<double> &x) = 0;
 
+  void
+  change_rhs(const Vector<double> &new_b) {
+    b = new_b;
+  }
+
   unsigned int
   get_iter() const {
     return n_iter;

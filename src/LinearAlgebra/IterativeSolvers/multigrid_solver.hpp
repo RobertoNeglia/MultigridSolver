@@ -28,9 +28,11 @@ public:
   virtual void
   setup() = 0;
 
+  // Two level multigrid solver
   virtual int
   solve(Vector<double> &x) = 0;
 
+  // multilevel multigrid solver
   virtual int
   solve(Vector<double> &x, unsigned int n_levels) = 0;
 
@@ -55,19 +57,22 @@ protected:
   SparseMatrix restrictor;
   SparseMatrix interpolator;
 
+  SparseMatrix A_2h;
+
   virtual void
   build_restrictor() = 0;
 
   virtual void
   build_interpolator() = 0;
 
-  virtual SparseMatrix &
+  virtual void
   coarsen_matrix(SparseMatrix &A) {
     std::cout << "  Coarsening the system matrix..." << std::endl;
-    SparseMatrix *A_2h = new SparseMatrix;
-    *A_2h              = restrictor.mul(A).mul(interpolator);
+    SparseMatrix *A_2h_ = new SparseMatrix;
+    *A_2h_              = restrictor.mul(A).mul(interpolator);
     std::cout << "  DONE!" << std::endl;
-    return *A_2h;
+
+    A_2h = *A_2h_;
   }
 };
 

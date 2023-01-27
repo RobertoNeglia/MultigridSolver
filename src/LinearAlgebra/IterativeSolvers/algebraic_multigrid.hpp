@@ -40,6 +40,12 @@ public:
     build_interpolator();
     build_restrictor();
 
+    coarsen_matrix(A);
+      if (DEBUG_SOLVING) {
+        A_2h.print_matrix();
+        press_to_continue();
+    }
+
       if (DEBUG_INTERPOLATOR) {
         std::cout << "Restrictor size: " << restrictor.rows() << "x" << restrictor.cols()
                   << std::endl;
@@ -54,23 +60,23 @@ public:
   }
 
   int
-  solve(std::vector<double> &x) override {
+  solve(Vector<double> &x) override {
     std::cout << "Solving AMG:" << std::endl;
     int          tot_iter               = 0;
     double       coarse_smoother_tol    = 1.e-100;
-    unsigned int coarse_smoother_max_it = 5;
+    unsigned int coarse_smoother_max_it = 15;
     double       normb;
     double       resid;
+
+    Vector<double> b_k(x.size());
+    Vector<double> r_h(x.size());
+    Vector<double> r_2h(restrictor.rows());
+    Vector<double> e_2h(restrictor.rows());
+    Vector<double> e_h(x.size());
 
     normb = norm(b);
       if (normb == 0.0) {
         normb = 1.0;
-    }
-
-    SparseMatrix A_2h = coarsen_matrix(A);
-      if (DEBUG_SOLVING) {
-        A_2h.print_matrix();
-        press_to_continue();
     }
 
     pre_smoother  = std::make_unique<Jacobi>(A, b, tol, pre_nu);
@@ -87,17 +93,15 @@ public:
                       << std::endl;
         }
 
-        // r_h = b - A*x_k - compute residual at step k on fine grid
-        std::vector<double> r_h  = subvec(b, A.mul(x));
-        std::vector<double> r_2h = restrictor.mul(r_h);
+        // compute residual at step k on fine grid
+        A.mul(b_k, x);
+        subvec(r_h, b, b_k);
 
-          if (DEBUG_SOLVING) {
-            print_vector(r_h);
-            print_vector(r_2h);
-            press_to_continue();
-        }
+        // bring residual to coraser grid
+        restrictor.mul(r_2h, r_h);
 
-        std::vector<double> e_2h(r_2h.size(), 0.0);
+        // coarse grid solver inital guess
+        fill(e_2h, 0.0);
 
         coarse_smoother =
           std::make_unique<Jacobi>(A_2h, r_2h, coarse_smoother_tol, coarse_smoother_max_it);
@@ -111,14 +115,10 @@ public:
                       << coarse_smoother->get_tol_achieved() << std::endl;
         }
 
-        std::vector<double> e_h = interpolator.mul(e_2h);
+        // bring error back to the fine grid
+        interpolator.mul(e_h, e_2h);
 
-          if (DEBUG_SOLVING) {
-            print_vector(e_2h);
-            print_vector(e_h);
-            press_to_continue();
-        }
-
+        // update approximate solution with the error computed on the fine grid
         addvec_inplace(x, e_h);
 
         // post-smoothing
@@ -131,9 +131,9 @@ public:
                       << std::endl;
         }
 
-        std::vector<double> r_k = subvec(b, A.mul(x));
+        subvec(r_h, b, A.mul(x));
 
-          if ((resid = norm(r_k) / normb) <= tol) {
+          if ((resid = norm(r_h) / normb) <= tol) {
             tol_achieved      = resid;
             n_iter            = i;
             smoother_tot_iter = tot_iter;
@@ -409,7 +409,7 @@ private:
   }
 
   void
-  print_vector(std::vector<double> v) const {
+  print_vector(Vector<double> v) const {
       for (auto i : v) {
         std::cout << i << " - ";
       }

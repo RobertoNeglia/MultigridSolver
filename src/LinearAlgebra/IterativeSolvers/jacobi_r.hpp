@@ -8,7 +8,13 @@ class Jacobi : public IterativeSolver {
   // PUBLIC MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 public:
-  using IterativeSolver::IterativeSolver;
+  Jacobi(const SparseMatrix   &A,
+         const Vector<double> &b,
+         const double          tol,
+         const unsigned int    max_iter) :
+    IterativeSolver(A, b, tol, max_iter) {
+    P = get_Jacobi_preconditioner(A);
+  }
 
   int
   solve(Vector<double> &x) override {
@@ -18,10 +24,12 @@ public:
       normb = 1.0;
 
     // result of A*x_k
-    Vector<double> b_k = A.mul(x);
+    Vector<double> b_k(x.size());
+    A.mul(b_k, x);
+
     // residual at step k: r_k = b - A*x_k = b - b_k;
     Vector<double> r_k(b_k.size());
-    r_k = subvec(b, b_k);
+    subvec(r_k, b, b_k);
 
       if ((resid = norm(r_k) / normb) <= tol) {
         tol_achieved = resid;
@@ -29,19 +37,20 @@ public:
         return 0;
     }
 
-    // Preconditioner (Jacobi)
-    SparseMatrix   P = get_Jacobi_preconditioner(A);
     Vector<double> p(b_k.size());
 
       for (unsigned int i = 0; i < max_iter; i++) {
         // calculate the action of the preconditioner on the residual
-        p = P.mul(r_k);
+        P.mul(p, r_k);
+
         // update the value of the solution
-        x = addvec(x, p);
+        addvec_inplace(x, p);
+
         // update the value of A*x_k
-        b_k = A.mul(x);
+        A.mul(b_k, x);
+
         // calculate the residual
-        r_k = subvec(b, b_k);
+        subvec(r_k, b, b_k);
 
           if ((resid = norm(r_k) / normb) <= tol) {
             tol_achieved = resid;
@@ -59,16 +68,18 @@ public:
   // PROTECTED MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 protected:
-  SparseMatrix
+  SparseMatrix P;
+
+  SparseMatrix &
   get_Jacobi_preconditioner(const SparseMatrix A) const {
-    SparseMatrix D;
-    D.initialize(A.cols(), A.rows());
+    SparseMatrix *D = new SparseMatrix;
+    D->initialize(A.cols(), A.rows());
 
       for (unsigned int i = 0; i < A.cols(); i++) {
-        D.insert_coeff(1.0 / A.coeff(i, i).first, i, i);
+        D->insert_coeff(1.0 / A.coeff(i, i).first, i, i);
       }
 
-    return D;
+    return *D;
   }
 };
 

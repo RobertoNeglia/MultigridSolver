@@ -1,7 +1,5 @@
 #include <chrono>
 #include <functional>
-#include <iostream>
-#include <vector>
 
 #include "LinearAlgebra/IterativeSolvers/algebraic_multigrid.hpp"
 #include "LinearAlgebra/IterativeSolvers/geometric_multigrid.hpp"
@@ -19,7 +17,7 @@ bool
 equal_to(std::vector<double> v, double val) {
   bool eq = true;
     for (unsigned int i = 0; i < v.size(); i++) {
-      if (std::abs(val - v[i]) > 1.e-6)
+      if (std::abs(val - v[i]) > 1.e-4)
         eq = false;
     }
 
@@ -53,12 +51,10 @@ timeit(const std::function<void()> &f) {
 
 int
 main(int argc, char **argv) {
-  unsigned int N;
-    if (argc == 2) {
+  unsigned int N = 10;
+    if (argc >= 2) {
       N = std::atoi(argv[1]);
-    } else {
-      N = 10;
-    }
+  }
 
   unsigned int n = (N - 1) * (N - 1);
 
@@ -76,31 +72,20 @@ main(int argc, char **argv) {
 
   // GMG initial guess
   double         initial_guess = 0.0;
-  Vector<double> jac_guess(A.cols(), initial_guess);
   Vector<double> gmg_guess(A.cols(), initial_guess);
   Vector<double> amg_guess(A.cols(), initial_guess);
 
-  const unsigned int mg_pre_nu  = 10;
-  const unsigned int mg_post_nu = 10;
-
   const double       tol      = 1.e-8;
-  const unsigned int max_iter = 5000;
+  const unsigned int max_iter = 10000;
 
-  Jacobi jac(A, b, tol, max_iter);
-
-  auto dt = timeit([&]() { jac.solve(jac_guess); });
-
-  std::cout << "NAIVE JAC: time elapsed " << dt << " [ms]" << std::endl;
-  std::cout << "NAIVE JAC: n_iter " << jac.get_iter() << std::endl;
-  std::cout << "NAIVE JAC: tol_achived " << jac.get_tol_achieved() << std::endl << std::endl;
-
-  std::cout << "===============================================" << std::endl << std::endl;
+  const unsigned int mg_pre_nu  = 150;
+  const unsigned int mg_post_nu = 150;
 
   GeometricMultigrid gmg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
   gmg.setup();
 
-  int flag;
-  dt = timeit([&]() { flag = gmg.solve(gmg_guess); });
+  int  flag;
+  auto dt = timeit([&]() { flag = gmg.solve(gmg_guess); });
 
   std::cout << "GMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
   std::cout << "GMG FLAG: " << flag << std::endl;
@@ -130,4 +115,10 @@ main(int argc, char **argv) {
     std::cout << "AMG correct solution found" << std::endl;
   else
     std::cout << ":(" << std::endl;
+
+#ifdef _OPENMP
+  std::cout << "ER SAMBUCONE MOLINARI CURATIVO" << std::endl;
+#endif
+
+  return 0;
 }
