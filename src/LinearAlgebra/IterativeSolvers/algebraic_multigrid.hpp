@@ -152,7 +152,7 @@ public:
   }
 
   virtual int
-  solve(Vector<double> &x, unsigned int n_levels) override {
+  solve(Vector<double> &x, const int n_levels) override {
     UNUSED(x);
     UNUSED(n_levels);
     return 0;
