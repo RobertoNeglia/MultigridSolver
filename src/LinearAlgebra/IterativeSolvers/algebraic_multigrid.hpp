@@ -195,7 +195,7 @@ private:
 
   template <typename T>
   unsigned int
-  get_pos_in_set(std::set<T> set, T val) {
+  get_pos_in_set(const std::set<T> &set, const T &val) {
     unsigned int i = 0;
       for (auto it = set.begin(); it != set.end(); it++) {
         if (*it == val)
@@ -206,7 +206,7 @@ private:
   }
 
   double
-  find_negative_max_in_row(const unsigned int row) const {
+  find_negative_max_in_row(const unsigned int &row) const {
     double max = DBL_MIN;
       for (unsigned int k = 0; k < A.cols(); k++) {
         double a_ik = A.coeff(row, k).first;
@@ -254,17 +254,17 @@ private:
   }
 
   bool
-  not_C_point(const unsigned int p) const {
+  not_C_point(const unsigned int &p) const {
     return !C_points.contains(p);
   }
 
   bool
-  not_F_point(const unsigned int p) const {
+  not_F_point(const unsigned int &p) const {
     return !F_points.contains(p);
   }
 
   void
-  update_strength(const unsigned int p) {
+  update_strength(const unsigned int &p) {
       if (not_C_point(p) && not_F_point(p)) {
         map_point_to_number_of_influences[p]++;
         unsigned int lambda = map_point_to_number_of_influences[p];
@@ -275,14 +275,14 @@ private:
   }
 
   void
-  update_neighbours_strength(const unsigned int p) {
+  update_neighbours_strength(const unsigned int &p) {
       for (auto i : map_point_to_strength_set[p]) {
         update_strength(i);
       }
   }
 
   void
-  make_F_point(const unsigned int p) {
+  make_F_point(const unsigned int &p) {
       if (not_C_point(p) && not_F_point(p)) {
         F_points.insert(p);
         update_neighbours_strength(p);
@@ -290,14 +290,14 @@ private:
   }
 
   void
-  neighbours_to_F_points(const unsigned int p) {
+  neighbours_to_F_points(const unsigned int &p) {
       for (auto j : map_point_to_strength_transpose_set[p]) {
         make_F_point(j);
       }
   }
 
   void
-  make_C_point(const unsigned int p) {
+  make_C_point(const unsigned int &p) {
     C_points.insert(p);
     neighbours_to_F_points(p);
       if (DEBUG_CF_SPLITTING) {
@@ -327,13 +327,13 @@ private:
     interpolator.initialize(C_points.size() + F_points.size(), C_points.size());
 
     unsigned int j = 0;
-      for (auto i : C_points) {
+      for (auto &i : C_points) {
         interpolator.insert_coeff(1.0, i, j);
         j++;
       }
 
       for (auto i : F_points) {
-          for (unsigned int j : map_point_to_strength_set[i]) {
+          for (auto j : map_point_to_strength_set[i]) {
             interpolator.insert_coeff(1.0 / map_point_to_strength_set[i].size(),
                                       i,
                                       get_pos_in_set(C_points, j));
