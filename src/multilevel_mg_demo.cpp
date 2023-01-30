@@ -78,14 +78,14 @@ main(int argc, char **argv) {
   const double       tol      = 1.e-8;
   const unsigned int max_iter = 10000;
 
-  const unsigned int mg_pre_nu  = 150;
-  const unsigned int mg_post_nu = 150;
+  const unsigned int mg_pre_nu  = 50;
+  const unsigned int mg_post_nu = 50;
 
   GeometricMultigrid gmg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
   gmg.setup();
 
   int  flag;
-  auto dt = timeit([&]() { flag = gmg.solve(gmg_guess, 3); });
+  auto dt = timeit([&]() { flag = gmg.solve(gmg_guess, 5); });
 
   std::cout << "GMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
   std::cout << "GMG FLAG: " << flag << std::endl;
@@ -99,22 +99,6 @@ main(int argc, char **argv) {
     std::cout << ":(" << std::endl;
 
   std::cout << "===============================================" << std::endl << std::endl;
-
-  AlgebraicMultigrid amg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
-  amg.setup();
-
-  dt = timeit([&]() { flag = amg.solve(amg_guess); });
-
-  std::cout << "AMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
-  std::cout << "AMG FLAG: " << flag << std::endl;
-  std::cout << "AMG TOT ITERATIONS: " << amg.get_iter() << std::endl;
-  std::cout << "AMG TOLERANCE ACHIEVED: " << amg.get_tol_achieved() << std::endl;
-  std::cout << "AMG JACOBI TOT_ITER: " << amg.get_tot_smoother_iter() << std::endl;
-
-  if (equal_to(amg_guess, exact_sol))
-    std::cout << "AMG correct solution found" << std::endl;
-  else
-    std::cout << ":(" << std::endl;
 
 #ifdef _OPENMP
   std::cout << "ER SAMBUCONE MOLINARI CURATIVO" << std::endl;

@@ -16,6 +16,7 @@ public:
 
   void
   setup() override {
+    std::cout << "==========================================================" << std::endl;
     std::cout << "Setting up GMG: " << std::endl;
     std::cout << "Matrix size: " << A.rows() << "x" << A.cols() << std::endl;
 
@@ -46,6 +47,7 @@ public:
 
   int
   solve(Vector<double> &x) override {
+    std::cout << "==========================================================" << std::endl;
     std::cout << "Solving GMG:" << std::endl;
 
     unsigned int tot_iter               = 0;
@@ -156,12 +158,13 @@ public:
 
   virtual int
   solve(Vector<double> &x, const int n_levels) override {
+    std::cout << "==========================================================" << std::endl;
     std::cout << "Solving GMG:" << std::endl;
-    std::cout << "LEVEL : " << (n_levels - 2) << std::endl;
+    std::cout << "LEVEL : " << (n_levels) << std::endl;
 
     unsigned int tot_iter               = 0;
     double       coarse_smoother_tol    = 1.e-6;
-    unsigned int coarse_smoother_max_it = 150;
+    unsigned int coarse_smoother_max_it = 50;
     double       normb;
     double       resid;
 
@@ -205,11 +208,14 @@ public:
         // coarse grid solver inital guess
         fill(e_2h, 0.0);
 
-          if (n_levels > 2 || A.rows() > 81) {
-            GeometricMultigrid coarser_gmg(A_2h, r_2h, pre_nu, post_nu, tol, max_iter);
+          if (n_levels > 2 && A.rows() > 81) {
+            std::cout << "  CALLING ANOTHER LEVEL OF MULTIGRID..." << std::endl;
+            GeometricMultigrid coarser_gmg(A_2h, r_2h, pre_nu, post_nu, tol * 1.e3, max_iter);
+            coarser_gmg.setup();
             coarser_gmg.solve(e_2h, n_levels - 1);
           } else {
             // solve the error equation on the coarser grid
+            std::cout << "  SOLVING THE ERROR EQUATION ON THE COARSEST GRID..." << std::endl;
             coarse_smoother->change_rhs(r_2h);
             flag = coarse_smoother->solve(e_2h);
             tot_iter += coarse_smoother->get_iter();
