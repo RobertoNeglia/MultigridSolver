@@ -32,10 +32,6 @@ public:
   virtual int
   solve(Vector<double> &x) = 0;
 
-  // multilevel multigrid solver
-  virtual int
-  solve(Vector<double> &x, const int n_levels) = 0;
-
   virtual unsigned int
   get_tot_smoother_iter() const {
     return smoother_tot_iter;

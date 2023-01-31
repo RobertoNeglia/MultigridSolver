@@ -1,9 +1,7 @@
 #include <chrono>
 #include <functional>
 
-#include "LinearAlgebra/IterativeSolvers/algebraic_multigrid.hpp"
-#include "LinearAlgebra/IterativeSolvers/geometric_multigrid.hpp"
-#include "LinearAlgebra/sparse_matrix.hpp"
+#include "LinearAlgebra/IterativeSolvers/multilevel_geometric_multigrid.hpp"
 
 void
 print_vector(std::vector<double> v) {
@@ -51,9 +49,13 @@ timeit(const std::function<void()> &f) {
 
 int
 main(int argc, char **argv) {
-  unsigned int N = 10;
-    if (argc == 2) {
+  unsigned int N        = 10;
+  unsigned int n_levels = 2;
+    if (argc > 1) {
       N = std::atoi(argv[1]);
+  }
+    if (argc > 2) {
+      n_levels = std::atoi(argv[2]);
   }
 
   unsigned int n = (N - 1) * (N - 1);
@@ -81,17 +83,19 @@ main(int argc, char **argv) {
   const unsigned int mg_pre_nu  = 50;
   const unsigned int mg_post_nu = 50;
 
-  GeometricMultigrid gmg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
+  MultilevelGeometricMultigrid gmg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter, n_levels);
   gmg.setup();
 
   int  flag;
-  auto dt = timeit([&]() { flag = gmg.solve(gmg_guess, 5); });
+  auto dt = timeit([&]() { flag = gmg.solve(gmg_guess, n_levels); });
 
   std::cout << "GMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
   std::cout << "GMG FLAG: " << flag << std::endl;
   std::cout << "GMG TOT ITERATIONS: " << gmg.get_iter() << std::endl;
   std::cout << "GMG TOLERANCE ACHIEVED: " << gmg.get_tol_achieved() << std::endl;
   std::cout << "GMG JACOBI TOT_ITER: " << gmg.get_tot_smoother_iter() << std::endl;
+
+  gmg.free_space();
 
   if (equal_to(gmg_guess, exact_sol))
     std::cout << "GMG correct solution found" << std::endl;

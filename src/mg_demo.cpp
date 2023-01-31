@@ -3,7 +3,6 @@
 
 #include "LinearAlgebra/IterativeSolvers/algebraic_multigrid.hpp"
 #include "LinearAlgebra/IterativeSolvers/geometric_multigrid.hpp"
-#include "LinearAlgebra/sparse_matrix.hpp"
 
 void
 print_vector(std::vector<double> v) {
@@ -78,8 +77,8 @@ main(int argc, char **argv) {
   const double       tol      = 1.e-8;
   const unsigned int max_iter = 10000;
 
-  const unsigned int mg_pre_nu  = 150;
-  const unsigned int mg_post_nu = 150;
+  const unsigned int mg_pre_nu  = 100;
+  const unsigned int mg_post_nu = 100;
 
   GeometricMultigrid gmg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
   gmg.setup();
@@ -98,23 +97,24 @@ main(int argc, char **argv) {
   else
     std::cout << ":(" << std::endl;
 
-  std::cout << "===============================================" << std::endl << std::endl;
+    // std::cout << "===============================================" << std::endl <<
+    // std::endl;
 
-  AlgebraicMultigrid amg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
-  amg.setup();
+    // AlgebraicMultigrid amg(A, b, mg_pre_nu, mg_post_nu, tol, max_iter);
+    // amg.setup();
 
-  dt = timeit([&]() { flag = amg.solve(amg_guess); });
+    // dt = timeit([&]() { flag = amg.solve(amg_guess); });
 
-  std::cout << "AMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
-  std::cout << "AMG FLAG: " << flag << std::endl;
-  std::cout << "AMG TOT ITERATIONS: " << amg.get_iter() << std::endl;
-  std::cout << "AMG TOLERANCE ACHIEVED: " << amg.get_tol_achieved() << std::endl;
-  std::cout << "AMG JACOBI TOT_ITER: " << amg.get_tot_smoother_iter() << std::endl;
+    // std::cout << "AMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
+    // std::cout << "AMG FLAG: " << flag << std::endl;
+    // std::cout << "AMG TOT ITERATIONS: " << amg.get_iter() << std::endl;
+    // std::cout << "AMG TOLERANCE ACHIEVED: " << amg.get_tol_achieved() << std::endl;
+    // std::cout << "AMG JACOBI TOT_ITER: " << amg.get_tot_smoother_iter() << std::endl;
 
-  if (equal_to(amg_guess, exact_sol))
-    std::cout << "AMG correct solution found" << std::endl;
-  else
-    std::cout << ":(" << std::endl;
+    // if (equal_to(amg_guess, exact_sol))
+    //   std::cout << "AMG correct solution found" << std::endl;
+    // else
+    //   std::cout << ":(" << std::endl;
 
 #ifdef _OPENMP
   std::cout << "ER SAMBUCONE MOLINARI CURATIVO" << std::endl;

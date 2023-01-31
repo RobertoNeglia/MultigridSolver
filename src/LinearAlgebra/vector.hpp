@@ -25,7 +25,7 @@ static Vector<T>
 addvec(const Vector<T> &a, const Vector<T> &y) {
   Vector<T> result(a.size(), 0.0);
     if (a.size() != y.size()) {
-      std::cout << "VECTORS DO NOT HAVE THE SAME SIZE" << std::endl;
+      std::cout << "VECTORS DO NOT HAVE THE SAME SIZE - ADD" << std::endl;
       return Vector<T>();
   }
 #pragma omp parallel for num_threads(4)
@@ -39,7 +39,7 @@ template <typename T>
 static Vector<T> &
 addvec_inplace(Vector<T> &a, const Vector<T> &y) {
     if (a.size() != y.size()) {
-      std::cout << "VECTORS DO NOT HAVE THE SAME SIZE" << std::endl;
+      std::cout << "VECTORS DO NOT HAVE THE SAME SIZE - ADD IN PLACE" << std::endl;
       return a;
   }
 #pragma omp parallel for num_threads(4)
@@ -53,7 +53,7 @@ template <typename T>
 static void
 subvec(Vector<T> &res, const Vector<T> &a, const Vector<T> &b) {
     if (a.size() != b.size()) {
-      std::cout << "VECTORS DO NOT HAVE THE SAME SIZE" << std::endl;
+      std::cout << "VECTORS DO NOT HAVE THE SAME SIZE - SUB" << std::endl;
       return;
   }
 #pragma omp parallel for num_threads(4)
@@ -70,6 +70,16 @@ static void
     for (unsigned int i = 0; i < v.size(); i++) {
       v[i] = x;
     }
+}
+
+template <typename T>
+void
+print_vector(Vector<T> v) {
+    for (T i : v) {
+      std::cout << i << " - ";
+    }
+
+  std::cout << std::endl;
 }
 
 #endif

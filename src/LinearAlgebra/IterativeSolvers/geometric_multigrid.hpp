@@ -1,5 +1,5 @@
-#ifndef __GEOMETRIC_MULTIGRID_H
-#define __GEOMETRIC_MULTIGRID_H
+#ifndef _GEOMETRIC_MULTIGRID_H__
+#define _GEOMETRIC_MULTIGRID_H__
 
 #include "../sparse_matrix.hpp"
 #include "jacobi_r.hpp"
@@ -52,7 +52,7 @@ public:
 
     unsigned int tot_iter               = 0;
     double       coarse_smoother_tol    = 1.e-6;
-    unsigned int coarse_smoother_max_it = 150;
+    unsigned int coarse_smoother_max_it = 100;
     double       normb;
     double       resid;
 
@@ -100,126 +100,6 @@ public:
         coarse_smoother->change_rhs(r_2h);
         flag = coarse_smoother->solve(e_2h);
         tot_iter += coarse_smoother->get_iter();
-
-        /* DEBUG
-          if (DEBUG_SOLVING) {
-            std::cout << "  COARSE_SOLVER: flag " << flag << std::endl;
-            std::cout << "  COARSE_SOLVER: n_iter " << coarse_smoother->get_iter()
-                      << std::endl;
-            std::cout << "  COARSE_SOLVER: tol_achieved "
-                      << coarse_smoother->get_tol_achieved() << std::endl;
-        }
-        */
-
-        // bring error back to the fine grid
-        interpolator.mul(e_h, e_2h);
-
-        // update approximate solution with the error computed on the fine grid
-        addvec_inplace(x, e_h);
-
-        // post-smoothing
-        flag = post_smoother->solve(x);
-        tot_iter += post_smoother->get_iter();
-
-        /* DEBUG
-          if (DEBUG_SOLVING) {
-            std::cout << "  POST_SMOOTHER: flag " << flag << std::endl;
-            std::cout << "  POST_SMOOTHER: n_iter " << post_smoother->get_iter() <<
-            std::endl; std::cout << "  POST_SMOOTHER: tol_achieved " <<
-            post_smoother->get_tol_achieved()
-                      << std::endl;
-        }
-        */
-
-        subvec(r_h, b, A.mul(x));
-
-          if ((resid = norm(r_h) / normb) <= tol) {
-            tol_achieved      = resid;
-            n_iter            = i;
-            smoother_tot_iter = tot_iter;
-            pre_smoother.reset();
-            coarse_smoother.reset();
-            post_smoother.reset();
-            std::cout << "  TOLERANCE ACHIEVED" << std::endl;
-            std::cout << "SOLVING: DONE!" << std::endl << std::endl;
-            return 1;
-        }
-      }
-    tol_achieved      = resid;
-    n_iter            = max_iter;
-    smoother_tot_iter = tot_iter;
-    pre_smoother.reset();
-    coarse_smoother.reset();
-    post_smoother.reset();
-    std::cout << "  ITERATION LIMIT REACHED" << std::endl;
-    std::cout << "SOLVING: DONE!" << std::endl << std::endl;
-    return 2;
-  }
-
-  virtual int
-  solve(Vector<double> &x, const int n_levels) override {
-    std::cout << "==========================================================" << std::endl;
-    std::cout << "Solving GMG:" << std::endl;
-    std::cout << "LEVEL : " << (n_levels) << std::endl;
-
-    unsigned int tot_iter               = 0;
-    double       coarse_smoother_tol    = 1.e-6;
-    unsigned int coarse_smoother_max_it = 50;
-    double       normb;
-    double       resid;
-
-    Vector<double> b_k(x.size());
-    Vector<double> r_h(x.size());
-    Vector<double> r_2h(restrictor.rows());
-    Vector<double> e_2h(restrictor.rows());
-    Vector<double> e_h(x.size());
-
-    normb = norm(b);
-      if (normb == 0.0) {
-        normb = 1.0;
-    }
-
-    pre_smoother = std::make_unique<Jacobi>(A, b, tol, pre_nu);
-    coarse_smoother =
-      std::make_unique<Jacobi>(A_2h, r_2h, coarse_smoother_tol, coarse_smoother_max_it);
-    post_smoother = std::make_unique<Jacobi>(A, b, tol, post_nu);
-
-      for (unsigned int i = 0; i < max_iter; i++) {
-        // pre-smoothing
-        int flag = pre_smoother->solve(x);
-        tot_iter += pre_smoother->get_iter();
-
-        /* DEBUG
-          if (DEBUG_SOLVING) {
-            std::cout << "  PRE_SMOOTHER: flag " << flag << std::endl;
-            std::cout << "  PRE_SMOOTHER: n_iter " << pre_smoother->get_iter() << std::endl;
-            std::cout << "  PRE_SMOOTHER: tol_achieved " << pre_smoother->get_tol_achieved()
-                      << std::endl;
-        }
-        */
-
-        // compute residual at step k on fine grid
-        A.mul(b_k, x);       // A * x_k
-        subvec(r_h, b, b_k); // b - A * x_k
-
-        // bring residual to coraser grid
-        restrictor.mul(r_2h, r_h);
-
-        // coarse grid solver inital guess
-        fill(e_2h, 0.0);
-
-          if (n_levels > 2 && A.rows() > 81) {
-            std::cout << "  CALLING ANOTHER LEVEL OF MULTIGRID..." << std::endl;
-            GeometricMultigrid coarser_gmg(A_2h, r_2h, pre_nu, post_nu, tol * 1.e3, max_iter);
-            coarser_gmg.setup();
-            coarser_gmg.solve(e_2h, n_levels - 1);
-          } else {
-            // solve the error equation on the coarser grid
-            std::cout << "  SOLVING THE ERROR EQUATION ON THE COARSEST GRID..." << std::endl;
-            coarse_smoother->change_rhs(r_2h);
-            flag = coarse_smoother->solve(e_2h);
-            tot_iter += coarse_smoother->get_iter();
-          }
 
         /* DEBUG
           if (DEBUG_SOLVING) {

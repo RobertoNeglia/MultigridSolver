@@ -3,7 +3,6 @@
 
 #include "LinearAlgebra/IterativeSolvers/algebraic_multigrid.hpp"
 #include "LinearAlgebra/IterativeSolvers/geometric_multigrid.hpp"
-#include "LinearAlgebra/sparse_matrix.hpp"
 
 void
 print_vector(std::vector<double> v) {
