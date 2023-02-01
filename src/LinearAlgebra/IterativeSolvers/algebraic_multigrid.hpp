@@ -188,7 +188,7 @@ private:
 
   template <typename T>
   unsigned int
-  get_pos_in_set(const std::set<T> &set, const T &val) {
+  get_pos_in_set(const std::set<T> &set, const T &val) const {
     unsigned int i = 0;
       for (auto it = set.begin(); it != set.end(); it++) {
         if (*it == val)
@@ -386,7 +386,7 @@ private:
   }
 
   void
-  print_C_i_set(const unsigned int i, std::ostream &os = std::cout) const {
+  print_C_i_set(const unsigned int &i, std::ostream &os = std::cout) const {
     os << "Interpolating C-points of " << i << std::endl;
       for (auto c : map_point_to_interpolating_points.at(i)) {
         os << c << " - ";
@@ -399,14 +399,6 @@ private:
       for (auto i : F_points) {
         print_C_i_set(i);
       }
-  }
-
-  void
-  print_vector(Vector<double> v) const {
-      for (auto i : v) {
-        std::cout << i << " - ";
-      }
-    std::cout << std::endl;
   }
 };
 

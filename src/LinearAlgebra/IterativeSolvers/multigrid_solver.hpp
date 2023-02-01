@@ -16,10 +16,10 @@ class MultigridSolver : public IterativeSolver {
 public:
   MultigridSolver(const SparseMatrix   &A,
                   const Vector<double> &b,
-                  const unsigned int    pre_nu,
-                  const unsigned int    post_nu,
-                  const double          tol,
-                  const unsigned int    max_iter) :
+                  const unsigned int   &pre_nu,
+                  const unsigned int   &post_nu,
+                  const double         &tol,
+                  const unsigned int   &max_iter) :
     IterativeSolver(A, b, tol, max_iter),
     pre_nu(pre_nu), post_nu(post_nu) {
     smoother_tot_iter = 0;

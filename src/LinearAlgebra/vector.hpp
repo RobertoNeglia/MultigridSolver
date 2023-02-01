@@ -65,16 +65,43 @@ subvec(Vector<T> &res, const Vector<T> &a, const Vector<T> &b) {
 
 template <typename T>
 static void
-            fill(Vector<T> v, const T x) {
+fill(Vector<T> &v, const T &x) {
+  //
 #pragma omp parallel for num_threads(4)
     for (unsigned int i = 0; i < v.size(); i++) {
       v[i] = x;
     }
 }
 
+bool
+compare(const Vector<double> &a, const Vector<double> &b, const double &tol) {
+  if (a.size() != b.size())
+    return false;
+  bool eq = true;
+    for (unsigned int i = 0; i < a.size(); i++) {
+        if (std::abs(a[i] - b[i]) > tol) {
+          eq = false;
+          break;
+      }
+    }
+
+  return eq;
+}
+
+bool
+equal_to(const Vector<double> &v, const double &val) {
+  bool eq = true;
+    for (unsigned int i = 0; i < v.size(); i++) {
+      if (std::abs(val - v[i]) > 1.e-6)
+        eq = false;
+    }
+
+  return eq;
+}
+
 template <typename T>
 void
-print_vector(Vector<T> v) {
+print_vector(const Vector<T> &v) {
     for (T i : v) {
       std::cout << i << " - ";
     }

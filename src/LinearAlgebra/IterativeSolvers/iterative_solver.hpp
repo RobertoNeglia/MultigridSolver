@@ -11,8 +11,8 @@ class IterativeSolver {
 public:
   IterativeSolver(const SparseMatrix   &A,
                   const Vector<double> &b,
-                  const double          tol,
-                  const unsigned int    max_iter) :
+                  const double         &tol,
+                  const unsigned int   &max_iter) :
     A(A),
     b(b), tol(tol), max_iter(max_iter) {
     tol_achieved = 0;

@@ -10,8 +10,8 @@ class Jacobi : public IterativeSolver {
 public:
   Jacobi(const SparseMatrix   &A,
          const Vector<double> &b,
-         const double          tol,
-         const unsigned int    max_iter) :
+         const double         &tol,
+         const unsigned int   &max_iter) :
     IterativeSolver(A, b, tol, max_iter) {
     P = get_Jacobi_preconditioner(A);
   }
@@ -71,7 +71,7 @@ protected:
   SparseMatrix P;
 
   SparseMatrix &
-  get_Jacobi_preconditioner(const SparseMatrix A) const {
+  get_Jacobi_preconditioner(const SparseMatrix &A) const {
     SparseMatrix *D = new SparseMatrix;
     D->initialize(A.cols(), A.rows());
 

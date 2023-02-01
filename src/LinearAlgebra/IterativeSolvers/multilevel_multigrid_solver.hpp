@@ -10,11 +10,11 @@ class MultilevelMultigridSolver : public MultigridSolver {
 public:
   MultilevelMultigridSolver(const SparseMatrix   &A,
                             const Vector<double> &b,
-                            const unsigned int    pre_nu,
-                            const unsigned int    post_nu,
-                            const double          tol,
-                            const unsigned int    max_iter,
-                            const unsigned int    n_levels) :
+                            const unsigned int   &pre_nu,
+                            const unsigned int   &post_nu,
+                            const double         &tol,
+                            const unsigned int   &max_iter,
+                            const unsigned int   &n_levels) :
     MultigridSolver(A, b, pre_nu, post_nu, tol, max_iter),
     n_levels(n_levels), system_matrices(n_levels), system_rhss(n_levels),
     restrictors(n_levels), interpolators(n_levels) {
@@ -50,7 +50,7 @@ public:
 
   // multilevel multigrid solver
   virtual int
-  solve(Vector<double> &x, const int n_levels) = 0;
+  solve(Vector<double> &x, const int &n_levels) = 0;
   //---------------------------------------------------------------------------------
   // PROTECTED MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
@@ -63,13 +63,13 @@ protected:
   Vector<std::unique_ptr<SparseMatrix>>   interpolators;
 
   virtual void
-  build_restrictor(const unsigned int lvl) = 0;
+  build_restrictor(const unsigned int &lvl) = 0;
 
   virtual void
-  build_interpolator(const unsigned int lvl) = 0;
+  build_interpolator(const unsigned int &lvl) = 0;
 
   virtual void
-  coarsen_matrix(const unsigned int lvl) = 0;
+  coarsen_matrix(const unsigned int &lvl) = 0;
 };
 
 #endif

@@ -31,7 +31,7 @@ public:
   }
 
   virtual int
-  solve(Vector<double> &x, const int curr_lvl) override {
+  solve(Vector<double> &x, const int &curr_lvl) override {
     const int lvl = curr_lvl - 1;
 
     std::cout << "==========================================================" << std::endl;
@@ -149,7 +149,7 @@ public:
   //---------------------------------------------------------------------------------
 private:
   void
-  build_restrictor(const unsigned int lvl) override {
+  build_restrictor(const unsigned int &lvl) override {
     std::cout << "  Building the restrictor of level " << lvl << "..." << std::endl;
 
     unsigned int N = std::sqrt(system_matrices[lvl]->rows());
@@ -182,13 +182,7 @@ private:
   }
 
   void
-  build_restrictor() override {}
-
-  void
-  build_interpolator() override {}
-
-  void
-  build_interpolator(const unsigned int lvl) override {
+  build_interpolator(const unsigned int &lvl) override {
     std::cout << "  Building the interpolator of level " << lvl << "..." << std::endl;
 
     interpolators[lvl] = std::make_unique<SparseMatrix>(restrictors[lvl]->transpose());
@@ -197,7 +191,7 @@ private:
   }
 
   void
-  coarsen_matrix(const unsigned int lvl) {
+  coarsen_matrix(const unsigned int &lvl) {
     std::cout << "  Coarsening the system matrix to level " << (lvl - 1) << "..." << std::endl;
 
     system_matrices[lvl - 1]          = std::make_unique<SparseMatrix>();
@@ -210,6 +204,12 @@ private:
               << "  Coarsen matrix size: " << system_matrices[lvl - 1]->rows() << "x"
               << system_matrices[lvl - 1]->cols() << std::endl;
   }
+
+  void
+  build_restrictor() override {}
+
+  void
+  build_interpolator() override {}
 };
 
 #endif

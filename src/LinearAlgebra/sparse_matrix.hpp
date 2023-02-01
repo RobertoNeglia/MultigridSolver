@@ -55,7 +55,7 @@ public:
   }
 
   void
-  initialize(const int m, const int n) {
+  initialize(const int &m, const int &n) {
     // Initialize variables and structures
     n_rows = m;
     n_cols = n;
@@ -84,7 +84,7 @@ public:
    * Returns the reference to the element, if present
    */
   std::pair<double *, bool>
-  coeff_ref(const unsigned int i, const unsigned int j) {
+  coeff_ref(const unsigned int &i, const unsigned int &j) {
     int start = A_row[i];   // beginning of the row i in the vectors A and A_col
     int end   = end_row(i); // end of the row i in the vectors A and A_col
 
@@ -99,7 +99,7 @@ public:
    * Returns the coefficient in position (i,j) of the matrix
    */
   std::pair<double, bool> const
-  coeff(const unsigned int i, const unsigned int j) const {
+  coeff(const unsigned int &i, const unsigned int &j) const {
     if (i >= n_rows || j >= n_cols) // out of bound requests, return false
       return std::make_pair(0, false);
 
@@ -120,7 +120,7 @@ public:
    * Inserts an elements inside the matrix at position (i,j)
    */
   void
-  insert_coeff(const double val, const int i, const int j) {
+  insert_coeff(const double &val, const int &i, const int &j) {
       if (val != 0) {
         // I have to insert in the exact position in arrays A and A_col, and update
         // A_row
@@ -234,7 +234,7 @@ public:
 
   // pass by reference - OK
   void
-  mul(const std::unique_ptr<SparseMatrix> &res, const std::unique_ptr<SparseMatrix> &B) {
+  mul(const std::unique_ptr<SparseMatrix> &res, const std::unique_ptr<SparseMatrix> &B) const {
       if (n_cols != B->rows()) {
         std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
         return;
@@ -256,6 +256,13 @@ public:
       }
 
     return;
+  }
+
+  void
+  scalar_mul(const double &alpha) {
+      for (unsigned int i = 0; i < A.size(); i++) {
+        A[i] *= alpha;
+      }
   }
 
   // return reference - ok
@@ -345,7 +352,7 @@ private:
    * removed (= 0 is inserted in that position), DECREASE should be used
    */
   void
-  update_next_A_row(const unsigned int i, const Increment incr) {
+  update_next_A_row(const unsigned int &i, const Increment &incr) {
       for (unsigned int k = i + 1; k < n_rows; k++) {
           if (A_row[k] != -1) {
             A_row[k] += incr;
@@ -358,7 +365,7 @@ private:
    * Matrix class variable
    */
   void
-  update_nnz(const Increment incr) {
+  update_nnz(const Increment &incr) {
     nnz += incr;
     A_row[n_rows] += incr;
   }
@@ -367,7 +374,7 @@ private:
    * Finds the position inside vectors A and A_cols of the element with coordinates (i,j)
    */
   unsigned int
-  find_position(const unsigned int i, const unsigned int j) const {
+  find_position(const unsigned int &i, const unsigned int &j) const {
     const unsigned int start = A_row[i];
     const unsigned int end   = end_row(i);
 
@@ -385,7 +392,7 @@ private:
    * Inserts an elment in an empty row
    */
   void
-  insert_in_empty_row(const double val, const int i, const int j) {
+  insert_in_empty_row(const double &val, const int &i, const int &j) {
     int end = end_row(i);
 
     // A and A_col vectors update
@@ -409,7 +416,7 @@ private:
    * Inserts an element in a non-empty row
    */
   void
-  insert_in_non_empty_row(const double val, const int i, const int j) {
+  insert_in_non_empty_row(const double &val, const int &i, const int &j) {
     std::pair<double, bool> el = coeff(i, j);
       if (el.second && el.first == 0) { // if element is not already present in the matrix
 
@@ -436,7 +443,7 @@ private:
    * Removes an element (= 0 is inserted in that position) from the matrix
    */
   void
-  remove(const unsigned int i, const unsigned int j) {
+  remove(const unsigned int &i, const unsigned int &j) {
     std::pair<double, bool> el = coeff(i, j);
       // check that the element is present in the matrix
       if (el.second && el.first != 0) { // element is in the matrix

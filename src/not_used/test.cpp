@@ -54,15 +54,6 @@ equal_to(std::vector<double> v, double val) {
   return eq;
 }
 
-auto
-timeit(const std::function<void()> &f) {
-  using namespace std::chrono;
-  const auto start = high_resolution_clock::now();
-  f();
-  const auto end = high_resolution_clock::now();
-  return duration_cast<milliseconds>(end - start).count();
-}
-
 int
 main() {
   // unsigned int dim = 2;

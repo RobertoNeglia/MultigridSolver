@@ -25,23 +25,6 @@ public:
 
     coarsen_matrix(A);
 
-    /* DEBUG
-      if (DEBUG_SOLVING) {
-        A_2h.print_matrix();
-        press_to_continue();
-    }
-
-    if (DEBUG_INTERPOLATOR) {
-            std::cout << "Restrictor size: " << restrictor.rows() << "x" << restrictor.cols()
-                      << std::endl;
-            // restrictor.print_matrix();
-            std::cout << "Interpolator size: " << interpolator.rows() << "x" <<
-       interpolator.cols()
-                      << std::endl;
-            // interpolator.print_matrix();
-    }
-    */
-
     std::cout << "Setup DONE!" << std::endl << std::endl;
   }
 

@@ -5,25 +5,6 @@
 #include "LinearAlgebra/IterativeSolvers/geometric_multigrid.hpp"
 
 void
-print_vector(std::vector<double> v) {
-    for (auto i : v) {
-      std::cout << i << " - ";
-    }
-  std::cout << std::endl;
-}
-
-bool
-equal_to(std::vector<double> v, double val) {
-  bool eq = true;
-    for (unsigned int i = 0; i < v.size(); i++) {
-      if (std::abs(val - v[i]) > 1.e-6)
-        eq = false;
-    }
-
-  return eq;
-}
-
-void
 generate_discretized_matrix(SparseMatrix &A, int m, int n) {
   int mn = m * n;
     for (int i = 0; i < mn; i++) {
@@ -64,10 +45,9 @@ main(int argc, char **argv) {
 
   double exact_sol = 1.0;
   // exact solution of the linear system
-  std::vector<double> x(A.cols(), exact_sol);
+  Vector<double> x(A.cols(), exact_sol);
   // system rhs
-  std::vector<double> b = A.mul(x);
-  // print_vector(b);
+  Vector<double> b = A.mul(x);
 
   // GMG initial guess
   double         initial_guess = 0.0;
