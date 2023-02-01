@@ -1,26 +1,59 @@
-# AlgebraicMultiGrid
+# Geometric Multigrid solver project
 
-## HOW TO COMPILE AND BUILD:
+## Partecipants
 
-starting from the root of the repository:
-- mkdir build 
-- cd build 
-- cmake ..
-- make
+Beltrame Leonardo \
+Davide Zaira \
+Neglia Roberto 
 
-## HOW TO EXECUTE
+## Short description
 
-after compiling, 4 executables will be created inside the build folder:
+Given the number of elements N (**assumed to be even**) to split the domain $\Omega = (0, 1)^2$ into, the system matrix $A$ of size $n^2\times n^2$ is assembled, $n = N - 1$,  with the following structure that arise from the discretization of the 2D Poisson problem:
 
-- SERIAL_JACOBI for a serial implementation of Jacobi
-- PARALLEL_JACOBI for a parallel implementation of Jacobi
-- SERIAL_MG_METHODS for a serial implementation of both the multigrid methods (geometric and algebraic version)
-- PARALLEL_MG_METHODS for a parallel implementation of both the multigrid methods
+![system_matrix](https://wikimedia.org/api/rest_v1/media/math/render/svg/840a9e2e60f7ba173658c25c008bae39ae829630)
 
-all the executables can accept a parameter when executed, which corresponds to the size of the coefficient matrix of the linear system
+with $D$, of size $n\times n$, defined as 
 
-no parameter will launch the demo with a matrix size of 10
+![D_matrix](https://wikimedia.org/api/rest_v1/media/math/render/svg/9a888686680e0145a43339649e7882acaaead93c)
 
-### EXAMPLE: ./SERIAL_JACOBI will solve a linear system with system matrix of size 10x10 with a serial implementation of Jacobi
+and $I$, also of size $n\times n$, is the identity matrix.
 
-### EXAMPLE: ./PARALLEL_MG_METHODS 32 will solve a linear system in parallel with system matrix of size 32x32
+The iterative solver solves the linear system $Ax = b$.
+
+The smoother used is Jacobi, but the code is written so that it can be changed to Gauss-Seidel or any other iterative solver that inherits from the `IterativeSolver` abstract class.
+
+OpenMP has been used to parallelize the code, in particular all matrix-vector multiplications and vector algebra operations.
+
+
+## How to compule and build:
+
+Starting from the root of the repository:
+```
+mkdir build 
+cd build 
+cmake ..
+make
+```
+
+## How to execute
+
+After compiling, 6 executables will be created inside the build folder:
+
+- `SERIAL_JACOBI` for a serial implementation of Jacobi;
+- `PARALLEL_JACOBI` for a parallel implementation of Jacobi;
+- `SERIAL_MG_METHODS` for a serial implementation of both the multigrid methods (geometric and algebraic version);
+- `PARALLEL_MG_METHODS` for a parallel implementation of both the multigrid methods;
+- `SERIAL_ML_MG_METHODS` for a serial implementation of the multilevel multigrid method;
+- `PARALLEL_ML_MG_METHODS` for a parallel implementation of the multilevel multigrid method.
+
+All the executables can accept a parameter when executed, which corresponds to the N above (system matrix will have size $n^2\times n^2$).
+
+No parameter will launch the demo with a matrix size of $N = 10$ (matrix size $81\times 81$).
+
+For the multilevel multigrid demo, a second parameter can be passed to the program which corresponds to the number of levels of multigrid coarse correction
+
+- EXAMPLE 1: `./SERIAL_JACOBI` will solve a linear system with system matrix of size $81\times 81$ with a serial implementation of Jacobi
+
+- EXAMPLE: `./PARALLEL_MG_METHODS 32` will solve a linear system in parallel with system matrix of size $961\times 961$
+
+- EXAMPLE: `./PARALLEL_ML_MG_METHODS 64 4` will solve a linear system in parallel with system matrix of size $3969\times 3969$
