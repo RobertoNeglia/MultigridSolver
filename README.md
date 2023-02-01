@@ -22,6 +22,10 @@ The iterative solver solves the linear system $Ax = b$.
 
 The smoother used is Jacobi, but the code is written so that it can be changed to Gauss-Seidel or any other iterative solver that inherits from the `IterativeSolver` abstract class.
 
+the `GeometricMultigrid` class is the implementation of the 2 level multigrid solver, while the `MultilevelGeometricMultigrid` is the implementation of the multilevel multigrid solver, which should be used for a number of levels **greater or equal than 3**: using this class for a 2 level multigrid solver will result in a **non-efficient solver** due to the particular data structures used for the multilevel implementation.
+
+There is also an implementation of the `AlgebraicMultigrid` solver: it works, does the CF-splitting correctly, but it's inefficient, probably due to the kind of interpolation we implemented.
+
 OpenMP has been used to parallelize the code, in particular all matrix-vector multiplications and vector algebra operations.
 
 
@@ -41,8 +45,8 @@ After compiling, 6 executables will be created inside the build folder:
 
 - `SERIAL_JACOBI` for a serial implementation of Jacobi;
 - `PARALLEL_JACOBI` for a parallel implementation of Jacobi;
-- `SERIAL_MG_METHODS` for a serial implementation of both the multigrid methods (geometric and algebraic version);
-- `PARALLEL_MG_METHODS` for a parallel implementation of both the multigrid methods;
+- `SERIAL_MG_METHODS` for a serial implementation of both the two level multigrid methods (geometric and algebraic version);
+- `PARALLEL_MG_METHODS` for a parallel implementation of both the two level multigrid methods;
 - `SERIAL_ML_MG_METHODS` for a serial implementation of the multilevel multigrid method;
 - `PARALLEL_ML_MG_METHODS` for a parallel implementation of the multilevel multigrid method.
 
@@ -50,7 +54,9 @@ All the executables can accept a parameter when executed, which corresponds to t
 
 No parameter will launch the demo with a matrix size of $N = 10$ (matrix size $81\times 81$).
 
-For the multilevel multigrid demo, a second parameter can be passed to the program which corresponds to the number of levels of multigrid coarse correction
+For the multilevel multigrid demo, a second parameter can be passed to the program which corresponds to the number of levels of multigrid: no second parameter will launch the multilevel multigrid demo with 3 levels.
+
+## Examples
 
 - EXAMPLE 1: `./SERIAL_JACOBI` will solve a linear system with system matrix of size $81\times 81$ with a serial implementation of Jacobi
 
