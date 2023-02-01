@@ -2,8 +2,10 @@
 #define _VECTOR_H__
 
 #include <omp.h>
+#include <time.h>
 
 #include <cmath>
+#include <random>
 #include <vector>
 
 template <typename T>
@@ -13,7 +15,7 @@ template <typename T>
 static double
 norm(const Vector<T> &a) {
   double n = 0;
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
     for (unsigned int i = 0; i < a.size(); i++) {
       n += a[i] * a[i];
     }
@@ -28,7 +30,7 @@ addvec(const Vector<T> &a, const Vector<T> &y) {
       std::cout << "VECTORS DO NOT HAVE THE SAME SIZE - ADD" << std::endl;
       return Vector<T>();
   }
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
     for (unsigned int i = 0; i < a.size(); i++) {
       result[i] = a[i] + y[i];
     }
@@ -42,7 +44,7 @@ addvec_inplace(Vector<T> &a, const Vector<T> &y) {
       std::cout << "VECTORS DO NOT HAVE THE SAME SIZE - ADD IN PLACE" << std::endl;
       return a;
   }
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
     for (unsigned int i = 0; i < a.size(); i++) {
       a[i] = a[i] + y[i];
     }
@@ -56,7 +58,7 @@ subvec(Vector<T> &res, const Vector<T> &a, const Vector<T> &b) {
       std::cout << "VECTORS DO NOT HAVE THE SAME SIZE - SUB" << std::endl;
       return;
   }
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
     for (unsigned int i = 0; i < a.size(); i++) {
       res[i] = a[i] - b[i];
     }
@@ -67,9 +69,25 @@ template <typename T>
 static void
 fill(Vector<T> &v, const T &x) {
   //
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
     for (unsigned int i = 0; i < v.size(); i++) {
       v[i] = x;
+    }
+}
+
+void
+fill_random(Vector<double> &v) {
+  std::mt19937                           engine(clock());
+  std::uniform_real_distribution<double> dist(-10.0, 10.0);
+    for (unsigned int i = 0; i < v.size(); i++) {
+      v[i] = dist(engine);
+    }
+}
+
+void
+fill_incremental(Vector<double> &v) {
+    for (unsigned int i = 0; i < v.size(); i++) {
+      v[i] = i + 1;
     }
 }
 

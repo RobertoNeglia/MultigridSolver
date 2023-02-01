@@ -145,7 +145,7 @@ public:
     }
 
     Av->resize(n_rows);
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
       for (unsigned int i = 0; i < n_rows; i++) {
         double sum   = 0.0;
         int    start = A_row[i];
@@ -168,7 +168,7 @@ public:
         return;
     }
 
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
       for (unsigned int i = 0; i < n_rows; i++) {
         double sum   = 0.0;
         int    start = A_row[i];
@@ -191,7 +191,7 @@ public:
         return;
     }
 
-#pragma omp parallel for num_threads(4)
+#pragma omp parallel for num_threads(omp_get_num_procs())
       for (unsigned int i = 0; i < n_rows; i++) {
         double sum   = 0.0;
         int    start = A_row[i];
@@ -216,6 +216,9 @@ public:
 
     AB->initialize(n_rows, B.n_cols);
 
+    // Vector<double> pippo(n_rows * B.n_cols);
+
+    // #pragma omp parallel for num_threads(omp_get_num_procs())
       for (unsigned int i = 0; i < AB->rows(); i++) {
           for (unsigned int j = 0; j < AB->cols(); j++) {
             double sum   = 0.0;
@@ -226,8 +229,12 @@ public:
               sum += A[k] * B.coeff(A_col[k], j).first;
 
             AB->insert_coeff(sum, i, j);
+            // pippo[j * n_rows + i] = sum;
           }
       }
+    // std::cout << "PIPPO" << std::endl;
+    // print_vector(pippo);
+    // press_to_continue();
 
     return *AB;
   }
@@ -242,6 +249,7 @@ public:
 
     res->initialize(n_rows, B->n_cols);
 
+    // #pragma omp parallel for num_threads(omp_get_num_procs())
       for (unsigned int i = 0; i < res->rows(); i++) {
           for (unsigned int j = 0; j < res->cols(); j++) {
             double sum   = 0.0;
@@ -260,6 +268,7 @@ public:
 
   void
   scalar_mul(const double &alpha) {
+#pragma omp parallel for num_threads(omp_get_num_procs())
       for (unsigned int i = 0; i < A.size(); i++) {
         A[i] *= alpha;
       }

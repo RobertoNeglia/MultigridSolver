@@ -49,6 +49,7 @@ main(int argc, char **argv) {
   double exact_sol = 1.0;
   // exact solution of the linear system
   std::vector<double> x(A.cols(), exact_sol);
+  // fill_random(x);
   // system rhs
   std::vector<double> b = A.mul(x);
   // print_vector(b);
@@ -56,7 +57,6 @@ main(int argc, char **argv) {
   // GMG initial guess
   double         initial_guess = 0.0;
   Vector<double> gmg_guess(A.cols(), initial_guess);
-  Vector<double> amg_guess(A.cols(), initial_guess);
 
   const double       tol      = 1.e-8;
   const unsigned int max_iter = 10000;
@@ -76,7 +76,7 @@ main(int argc, char **argv) {
   std::cout << "GMG TOLERANCE ACHIEVED: " << gmg.get_tol_achieved() << std::endl;
   std::cout << "GMG JACOBI TOT_ITER: " << gmg.get_tot_smoother_iter() << std::endl;
 
-  if (equal_to(gmg_guess, exact_sol))
+  if (compare(gmg_guess, x, 1.e-6))
     std::cout << "GMG correct solution found" << std::endl;
   else
     std::cout << ":(" << std::endl;

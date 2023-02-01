@@ -46,6 +46,7 @@ main(int argc, char **argv) {
   double exact_sol = 1.0;
   // exact solution of the linear system
   Vector<double> x(A.cols(), exact_sol);
+  // fill_random(x);
   // system rhs
   Vector<double> b = A.mul(x);
 
@@ -54,7 +55,7 @@ main(int argc, char **argv) {
   Vector<double> jac_guess(A.cols(), initial_guess);
 
   const double       tol      = 1.e-8;
-  const unsigned int max_iter = 15000;
+  const unsigned int max_iter = 30000;
 
   Jacobi jac(A, b, tol, max_iter);
 
