@@ -21,23 +21,6 @@ public:
 
     coarsen_all_matrices();
 
-    /* DEBUG
-  if (DEBUG_SOLVING) {
-    A_2h.print_matrix();
-    press_to_continue();
-}
-
-if (DEBUG_INTERPOLATOR) {
-        std::cout << "Restrictor size: " << restrictor.rows() << "x" << restrictor.cols()
-                  << std::endl;
-        // restrictor.print_matrix();
-        std::cout << "Interpolator size: " << interpolator.rows() << "x" <<
-   interpolator.cols()
-                  << std::endl;
-        // interpolator.print_matrix();
-}
-*/
-
     std::cout << "Setup DONE!" << std::endl << std::endl;
   }
 
@@ -93,7 +76,8 @@ if (DEBUG_INTERPOLATOR) {
         // coarse grid solver inital guess
         fill(e_2h, 0.0);
 
-          if (lvl >= 2 && system_matrices[lvl]->rows() >= 9) {
+          if (lvl >= 2 && system_matrices[lvl]->rows() >= 9 &&
+              system_matrices[0]->rows() != 0) {
             std::cout << std::string((n_levels - lvl + 1) * 2, ' ')
                       << "CALLING ANOTHER LEVEL OF MULTIGRID..." << std::endl;
             solve(e_2h, curr_lvl - 1); // MG(e^i-1, b^i-1)
@@ -173,28 +157,26 @@ private:
     unsigned int m = M * M;
     unsigned int n = system_matrices[lvl]->cols();
 
-    SparseMatrix *restrictor = new SparseMatrix;
+    restrictors[lvl] = std::make_unique<SparseMatrix>();
 
-    restrictor->initialize(m, n);
+    restrictors[lvl]->initialize(m, n);
       for (unsigned int il = 0; il < M; il++) {
         unsigned int i = 1 + il * 2;
           for (unsigned int jl = 0; jl < M; jl++) {
             unsigned int j   = 1 + jl * 2;
             unsigned int ijl = il + jl * M;
 
-            restrictor->insert_coeff(1.0 / 4.0, ijl, i + j * N);
-            restrictor->insert_coeff(1.0 / 8.0, ijl, (i - 1) + j * N);
-            restrictor->insert_coeff(1.0 / 8.0, ijl, (i + 1) + j * N);
-            restrictor->insert_coeff(1.0 / 8.0, ijl, i + (j - 1) * N);
-            restrictor->insert_coeff(1.0 / 8.0, ijl, i + (j + 1) * N);
-            restrictor->insert_coeff(1.0 / 16.0, ijl, (i - 1) + (j - 1) * N);
-            restrictor->insert_coeff(1.0 / 16.0, ijl, (i - 1) + (j + 1) * N);
-            restrictor->insert_coeff(1.0 / 16.0, ijl, (i + 1) + (j - 1) * N);
-            restrictor->insert_coeff(1.0 / 16.0, ijl, (i + 1) + (j + 1) * N);
+            restrictors[lvl]->insert_coeff(1.0 / 4.0, ijl, i + j * N);
+            restrictors[lvl]->insert_coeff(1.0 / 8.0, ijl, (i - 1) + j * N);
+            restrictors[lvl]->insert_coeff(1.0 / 8.0, ijl, (i + 1) + j * N);
+            restrictors[lvl]->insert_coeff(1.0 / 8.0, ijl, i + (j - 1) * N);
+            restrictors[lvl]->insert_coeff(1.0 / 8.0, ijl, i + (j + 1) * N);
+            restrictors[lvl]->insert_coeff(1.0 / 16.0, ijl, (i - 1) + (j - 1) * N);
+            restrictors[lvl]->insert_coeff(1.0 / 16.0, ijl, (i - 1) + (j + 1) * N);
+            restrictors[lvl]->insert_coeff(1.0 / 16.0, ijl, (i + 1) + (j - 1) * N);
+            restrictors[lvl]->insert_coeff(1.0 / 16.0, ijl, (i + 1) + (j + 1) * N);
           }
       }
-
-    restrictors[lvl] = restrictor;
 
     std::cout << "  DONE!" << std::endl;
   }
@@ -209,7 +191,7 @@ private:
   build_interpolator(const unsigned int lvl) override {
     std::cout << "  Building the interpolator of level " << lvl << "..." << std::endl;
 
-    interpolators[lvl] = &(restrictors[lvl]->transpose());
+    interpolators[lvl] = std::make_unique<SparseMatrix>(restrictors[lvl]->transpose());
 
     std::cout << "  DONE!" << std::endl;
   }
@@ -218,10 +200,11 @@ private:
   coarsen_matrix(const unsigned int lvl) {
     std::cout << "  Coarsening the system matrix to level " << (lvl - 1) << "..." << std::endl;
 
-    system_matrices[lvl - 1]          //
-      = restrictors[lvl]              //
-          ->mul(system_matrices[lvl]) //
-          ->mul(interpolators[lvl]);
+    system_matrices[lvl - 1]          = std::make_unique<SparseMatrix>();
+    std::unique_ptr<SparseMatrix> tmp = std::make_unique<SparseMatrix>();
+
+    restrictors[lvl]->mul(tmp, system_matrices[lvl]);
+    tmp->mul(system_matrices[lvl - 1], interpolators[lvl]);
 
     std::cout << "  Coarsening done" << std::endl
               << "  Coarsen matrix size: " << system_matrices[lvl - 1]->rows() << "x"

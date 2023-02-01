@@ -82,4 +82,10 @@ print_vector(Vector<T> v) {
   std::cout << std::endl;
 }
 
+void
+press_to_continue(std::ostream &os = std::cout, std::istream &is = std::cin) {
+  os << "Press enter to continue: ";
+  is.ignore();
+}
+
 #endif

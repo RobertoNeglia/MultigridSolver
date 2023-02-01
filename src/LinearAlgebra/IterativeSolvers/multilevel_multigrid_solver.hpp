@@ -8,21 +8,18 @@ class MultilevelMultigridSolver : public MultigridSolver {
   // PUBLIC MEMBERS DECLARATION
   //---------------------------------------------------------------------------------
 public:
-  MultilevelMultigridSolver(SparseMatrix      &A,
-                            Vector<double>    &b,
-                            const unsigned int pre_nu,
-                            const unsigned int post_nu,
-                            const double       tol,
-                            const unsigned int max_iter,
-                            const unsigned int n_levels) :
+  MultilevelMultigridSolver(const SparseMatrix   &A,
+                            const Vector<double> &b,
+                            const unsigned int    pre_nu,
+                            const unsigned int    post_nu,
+                            const double          tol,
+                            const unsigned int    max_iter,
+                            const unsigned int    n_levels) :
     MultigridSolver(A, b, pre_nu, post_nu, tol, max_iter),
-    n_levels(n_levels) {
-    system_matrices.reserve(n_levels);
-    system_rhss.reserve(n_levels);
-    restrictors.reserve(n_levels);
-    interpolators.reserve(n_levels);
-    system_matrices[n_levels - 1] = &A;
-    system_rhss[n_levels - 1]     = &b;
+    n_levels(n_levels), system_matrices(n_levels), system_rhss(n_levels),
+    restrictors(n_levels), interpolators(n_levels) {
+    system_matrices[n_levels - 1] = std::make_unique<SparseMatrix>(A);
+    system_rhss[n_levels - 1]     = std::make_unique<Vector<double>>(b);
   }
 
   virtual void
@@ -47,26 +44,7 @@ public:
 
         coarsen_matrix(i);
 
-        system_rhss[i - 1] = new Vector<double>(restrictors[i]->rows());
-      }
-  }
-
-  virtual void
-  free_space() {
-      for (auto i : system_matrices) {
-        free(i);
-      }
-
-      for (auto i : system_rhss) {
-        free(i);
-      }
-
-      for (auto i : restrictors) {
-        free(i);
-      }
-
-      for (auto i : interpolators) {
-        free(i);
+        system_rhss[i - 1] = std::make_unique<Vector<double>>(restrictors[i]->rows());
       }
   }
 
@@ -79,10 +57,10 @@ public:
 protected:
   unsigned int n_levels;
 
-  Vector<SparseMatrix *>   system_matrices;
-  Vector<Vector<double> *> system_rhss;
-  Vector<SparseMatrix *>   restrictors;
-  Vector<SparseMatrix *>   interpolators;
+  Vector<std::unique_ptr<SparseMatrix>>   system_matrices;
+  Vector<std::unique_ptr<Vector<double>>> system_rhss;
+  Vector<std::unique_ptr<SparseMatrix>>   restrictors;
+  Vector<std::unique_ptr<SparseMatrix>>   interpolators;
 
   virtual void
   build_restrictor(const unsigned int lvl) = 0;

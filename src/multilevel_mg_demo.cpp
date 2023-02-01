@@ -89,13 +89,11 @@ main(int argc, char **argv) {
   int  flag;
   auto dt = timeit([&]() { flag = gmg.solve(gmg_guess, n_levels); });
 
-  std::cout << "GMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
+  std::cout << "GMG SOLVE TIME ELAPSED: " << dt << " [ms]" << std::endl;
   std::cout << "GMG FLAG: " << flag << std::endl;
   std::cout << "GMG TOT ITERATIONS: " << gmg.get_iter() << std::endl;
   std::cout << "GMG TOLERANCE ACHIEVED: " << gmg.get_tol_achieved() << std::endl;
   std::cout << "GMG JACOBI TOT_ITER: " << gmg.get_tot_smoother_iter() << std::endl;
-
-  gmg.free_space();
 
   if (equal_to(gmg_guess, exact_sol))
     std::cout << "GMG correct solution found" << std::endl;

@@ -24,6 +24,7 @@ class SparseMatrix {
 public:
   SparseMatrix() {}
 
+  // pass by reference - ok
   SparseMatrix(const SparseMatrix &M) {
     nnz    = M.nnz;
     n_rows = M.n_rows;
@@ -136,7 +137,7 @@ public:
 
   // computes A*v
   Vector<double> &
-  mul(const std::vector<double> &v) const {
+  mul(const Vector<double> &v) const {
     Vector<double> *Av = new Vector<double>();
       if (n_cols != v.size()) {
         std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
@@ -161,7 +162,7 @@ public:
 
   // computes A*v
   void
-  mul(Vector<double> *res, const std::vector<double> &v) const {
+  mul(std::unique_ptr<Vector<double>> &res, const Vector<double> &v) const {
       if (n_cols != v.size()) {
         std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
         return;
@@ -184,7 +185,7 @@ public:
 
   // computes A*v
   void
-  mul(Vector<double> &res, const std::vector<double> &v) const {
+  mul(Vector<double> &res, const Vector<double> &v) const {
       if (n_cols != v.size()) {
         std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
         return;
@@ -231,57 +232,9 @@ public:
     return *AB;
   }
 
-  SparseMatrix *
-  mul(const SparseMatrix *B) const {
-    SparseMatrix *AB = new SparseMatrix;
-      if (n_cols != B->rows()) {
-        std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
-        return AB;
-    }
-
-    AB->initialize(n_rows, B->n_cols);
-
-      for (unsigned int i = 0; i < AB->rows(); i++) {
-          for (unsigned int j = 0; j < AB->cols(); j++) {
-            double sum   = 0.0;
-            int    start = A_row[i];
-            int    end   = end_row(i);
-
-            for (int k = start; k < end; k++)
-              sum += A[k] * B->coeff(A_col[k], j).first;
-
-            AB->insert_coeff(sum, i, j);
-          }
-      }
-
-    return AB;
-  }
-
+  // pass by reference - OK
   void
-  mul(SparseMatrix &res, const SparseMatrix &B) const {
-      if (n_cols != B.rows()) {
-        std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
-        return;
-    }
-
-    res.initialize(n_rows, B.n_cols);
-
-      for (unsigned int i = 0; i < res.rows(); i++) {
-          for (unsigned int j = 0; j < res.cols(); j++) {
-            double sum   = 0.0;
-            int    start = A_row[i];
-            int    end   = end_row(i);
-
-            for (int k = start; k < end; k++)
-              sum += A[k] * B.coeff(A_col[k], j).first;
-
-            res.insert_coeff(sum, i, j);
-          }
-      }
-  }
-
-  void
-  mul(SparseMatrix *&res, const SparseMatrix *&B) const {
+  mul(const std::unique_ptr<SparseMatrix> &res, const std::unique_ptr<SparseMatrix> &B) {
       if (n_cols != B->rows()) {
         std::cout << "ERROR: INCOMPATIBLE SIZES" << std::endl;
         return;
@@ -301,8 +254,11 @@ public:
             res->insert_coeff(sum, i, j);
           }
       }
+
+    return;
   }
 
+  // return reference - ok
   SparseMatrix &
   transpose() const {
     SparseMatrix *At = new SparseMatrix;
@@ -318,13 +274,6 @@ public:
       }
 
     return *At;
-  }
-
-  void
-  scalar_mul(const double alpha) {
-      for (unsigned int i = 0; i < A.size(); i++) {
-        A[i] *= alpha;
-      }
   }
 
   /**
@@ -376,9 +325,6 @@ private:
   Vector<double>       A;
   Vector<unsigned int> A_col;
   Vector<int>          A_row;
-  // std::vector<double>       A;
-  // std::vector<unsigned int> A_col;
-  // std::vector<int>          A_row;
 
   /**
    * Returns the end of row i of the matrix inside the vectors A and A_col
@@ -513,11 +459,5 @@ private:
     }
   }
 };
-
-void
-press_to_continue(std::ostream &os = std::cout, std::istream &is = std::cin) {
-  os << "Press enter to continue: ";
-  is.ignore();
-}
 
 #endif

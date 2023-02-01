@@ -86,7 +86,7 @@ main(int argc, char **argv) {
   int  flag;
   auto dt = timeit([&]() { flag = gmg.solve(gmg_guess); });
 
-  std::cout << "GMG TIME ELAPSED: " << dt << " [ms]" << std::endl;
+  std::cout << "GMG SOLVE TIME ELAPSED: " << dt << " [ms]" << std::endl;
   std::cout << "GMG FLAG: " << flag << std::endl;
   std::cout << "GMG TOT ITERATIONS: " << gmg.get_iter() << std::endl;
   std::cout << "GMG TOLERANCE ACHIEVED: " << gmg.get_tol_achieved() << std::endl;
