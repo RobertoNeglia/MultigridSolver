@@ -20,6 +20,10 @@ and $I$, also of size $n\times n$, is the identity matrix.
 
 The iterative solver solves the linear system $Ax = b$.
 
+The matrix is stored in a CSR (Compressed Sparse Row) format to exploit the sparsity that arise from the problem discretization.
+
+The code is completely general and can be used with any symmetric positive definite matrix (to assure convergence, from iterative solvers theory).
+
 The smoother used is Jacobi, but the code is written so that it can be changed to Gauss-Seidel or any other iterative solver that inherits from the `IterativeSolver` abstract class.
 
 the `GeometricMultigrid` class is the implementation of the 2 level multigrid solver, while the `MultilevelGeometricMultigrid` is the implementation of the multilevel multigrid solver, which should be used for a number of levels **greater or equal than 3**: using this class for a 2 level multigrid solver will result in a **non-efficient solver** due to the particular data structures used for the multilevel implementation.
