@@ -10,11 +10,11 @@ Neglia Roberto
 
 Given the number of elements N (**assumed to be even**) to split the domain $\Omega = (0, 1)^2$ into, the system matrix $A$ of size $n^2\times n^2$ is assembled, $n = N - 1$,  with the following structure that arise from the discretization of the 2D Poisson problem:
 
-![system_matrix](https://wikimedia.org/api/rest_v1/media/math/render/svg/840a9e2e60f7ba173658c25c008bae39ae829630)
+![system_matrix](/imgs/system_matrix.png)
 
 with $D$, of size $n\times n$, defined as 
 
-![D_matrix](https://wikimedia.org/api/rest_v1/media/math/render/svg/9a888686680e0145a43339649e7882acaaead93c)
+![D_matrix](/imgs/D_matrix.png)
 
 and $I$, also of size $n\times n$, is the identity matrix.
 
