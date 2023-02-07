@@ -1,5 +1,6 @@
 ## Some Notes ##
 - Overall good progamming with templates and polymorphism. You have created your own matrix and vector classes. OK, since it is an exercise for learning to program, but in general better use well established linear algebra libraries
+- Code compiles and runs smoothly, you provide interesting examples in the readme
 - Some comments in the code help readability.... here there are a few, but very little to describe the function and function arguments.
 
 - You have used templates in other parts of the code. Why not make the class for multigrid a template with template argument the smoother? So using different smoothers
@@ -22,13 +23,25 @@ with
 
 ```
 
--Possible memory leaks!
+- In `SparseMatrix` you define a custom copy-constructor and assignment operator, but they achieve nothing different from the default ones.
 
-```
+-Possible memory leaks in many points!
+
+```cpp
 static void *
   operator new(std::size_t count) {
     return ::operator new(count);
   }
+//...
+Vector<double> *Av = new Vector<double>();
+//...
+SparseMatrix *AB = new SparseMatrix;
+//...
+SparseMatrix *At = new SparseMatrix;
+// in jacobi_r.hpp
+SparseMatrix *D = new SparseMatrix;
+// in multigrid_solver.hpp
+SparseMatrix *A_2h_ = new SparseMatrix;
 ```
 
 where is the corresponding `delete`? Who is in charge of the resource? In modern C++ you should use smart pointers for owning pointers, and avoid possible terrible 
@@ -43,8 +56,8 @@ headaches caused by a memory leak!. Remember RAII and the single responsibility 
     static double
     norm(const Vector<T> &a) {
 ```
-A static function is visible only in the translation unit that defines it. But this is a function template in a header file. I do not understand
-the point of making it static. 
+A static function is visible only in the translation unit that defines it. But this is a function template in a header file. I do not understand the point of making it static. 
+Moreover, you are performing a reduction operator, so either you make the update atomic, or you specify `reduction(+:n)` in the pragma.
 
 
 
@@ -82,3 +95,7 @@ That's it.
 ```
 
 - In C++ `time.h` should be replaced by `<ctime>`.
+
+- In `jacobi_r.hpp` you could have stored the preconditioner in a `Vector` since it is diagonal, and when you apply it you just make an element-wise multiplication between vectors.
+
+- In `unsigned int M = std::floor((N - 1) / 2);` the function `std::floor` may just cause errors: the operator `/` between two integers is already the integer division, when you call `std::floor` it outputs a floating point number that is then implicitly cast to unsigned integer.
